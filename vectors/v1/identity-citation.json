@@ -1,0 +1,1070 @@
+{
+  "schemaVersion": 1,
+  "profile": "draft text profile",
+  "identityChain": {
+    "sourceObjectVersion": {
+      "name": "markdown-policy-source",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {
+          "adapter": "filesystem-markdown-v1"
+        }
+      },
+      "canonicalSha256": "ad3f902c6a97848d5fdc6c1b041b43dec41cc0ae259914210a84aa114c67ba5f"
+    },
+    "evidenceVersion": {
+      "name": "markdown-policy-evidence",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "canonicalSha256": "3cc21db8e29b537e318fa3c446f00f061028266920bb8609d74a9c547fa4adb3"
+    },
+    "structureRevision": {
+      "name": "markdown-policy-structure",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "canonicalSha256": "9940a8b4f5d5659405c157423096d89f875c96f916a9e7b97aa0927813f8ad97"
+    },
+    "projectionRevision": {
+      "name": "reviewer-markdown-projection",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "canonicalSha256": "15d8cfddf65117d8428de61653f783acaa2f9ce68dedaac885c584f7a76dcfdb"
+    }
+  },
+  "positiveCitationCases": [
+    {
+      "name": "line-range-policy-limitation",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "canonicalSha256": "cc2d2880834cc6e8befe6c222b1c1ab9c4853c22992e0b2d5b2498d43b17100b"
+    },
+    {
+      "name": "node-policy-root",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:policy",
+        "occurrenceId": null,
+        "selector": { "kind": "node", "anchorId": "anchor:policy" },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:18"
+      },
+      "canonicalSha256": "0666bec64bb551d4adad8484c498209bb99d806793acac06423eeae60c72439c"
+    },
+    {
+      "name": "text-span-policy-exception",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:exception",
+        "occurrenceId": "occurrence:2",
+        "selector": { "kind": "textSpan", "startOffset": 120, "endOffset": 188 },
+        "exactQuoteSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:19"
+      },
+      "canonicalSha256": "1d6d0814db120b2eed52765a800ea665bb1ef9512e7f8961e4967880ce10c463"
+    }
+  ],
+  "schemaNegativeIdentityCases": [
+    {
+      "name": "source-object-unknown-field",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {},
+        "unexpected": "value"
+      }
+    },
+    {
+      "name": "source-object-invalid-enum",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "directory",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "source-object-uppercase-digest",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "newline-suffixed-source-digest",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111\n",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "newline-suffixed-source-identifier",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy\n",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "source-object-unsafe-byte-size",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 9007199254740992,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "newline-suffixed-source-media-type",
+      "kind": "sourceObjectVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown\n",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "evidence-version-duplicate-source-id",
+      "kind": "evidenceVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1", "source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": [],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "name": "evidence-version-malformed-code",
+      "kind": "evidenceVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["Bad"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "name": "newline-suffixed-evidence-code",
+      "kind": "evidenceVersion",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview\n"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "name": "structure-revision-missing-field",
+      "kind": "structureRevision",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      }
+    },
+    {
+      "name": "projection-revision-invalid-identifier",
+      "kind": "projectionRevision",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      }
+    },
+    {
+      "name": "projection-revision-unknown-field",
+      "kind": "projectionRevision",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "unexpected": "value"
+      }
+    }
+  ],
+  "schemaNegativeCitationCases": [
+    {
+      "name": "citation-unknown-field",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17",
+        "unexpected": "value"
+      }
+    },
+    {
+      "name": "citation-uppercase-digest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "newline-suffixed-citation-digest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444\n",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "newline-suffixed-citation-identifier",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1\n",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-unknown-selector",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "section", "anchorId": "anchor:limitation" },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-zero-line-range",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 0, "endLine": 1 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-unsafe-integer",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:exception",
+        "occurrenceId": "occurrence:2",
+        "selector": { "kind": "textSpan", "startOffset": 0, "endOffset": 9007199254740992 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-blank-identifier",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    }
+  ],
+  "semanticNegativeCitationCases": [
+    {
+      "name": "citation-reversed-line-range",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 103, "endLine": 88 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-reversed-text-span",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:exception",
+        "occurrenceId": "occurrence:2",
+        "selector": { "kind": "textSpan", "startOffset": 188, "endOffset": 120 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:19"
+      }
+    },
+    {
+      "name": "citation-node-anchor-mismatch",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "node", "anchorId": "anchor:other" },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "citation-non-nfc-profile-version",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "e\u0301",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    }
+  ],
+  "semanticNegativeContractCases": [
+    {
+      "name": "float-source-byte-size",
+      "kind": "sourceObjectVersion",
+      "expectedError": "CANONICAL_NUMBER_TYPE",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27.0,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": {}
+      }
+    },
+    {
+      "name": "float-line-range-coordinate",
+      "kind": "citationAddress",
+      "expectedError": "CANONICAL_NUMBER_TYPE",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88.0, "endLine": 103 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      }
+    },
+    {
+      "name": "float-text-span-coordinate",
+      "kind": "citationAddress",
+      "expectedError": "CANONICAL_NUMBER_TYPE",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:exception",
+        "occurrenceId": "occurrence:2",
+        "selector": { "kind": "textSpan", "startOffset": 120, "endOffset": 188.0 },
+        "exactQuoteSha256": null,
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:19"
+      }
+    }
+  ],
+  "crossReferenceNegativeCases": [
+    {
+      "name": "mismatched-source-version",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v2",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-evidence-version",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v2",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-structure-revision",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v2",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-projection-revision",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v2",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-projection-profile-id",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-text",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-projection-profile-version",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "2",
+        "projectionPayloadSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    },
+    {
+      "name": "mismatched-projection-payload-digest",
+      "sourceObjectVersion": {
+        "schemaVersion": 1,
+        "kind": "sourceObjectVersion",
+        "sourceObjectId": "source:policy",
+        "sourceVersionId": "source-version:policy:v1",
+        "objectKind": "file",
+        "byteSize": 27,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "mediaType": "text/markdown",
+        "custodyState": "externalReadOnly",
+        "provenance": { "adapter": "filesystem-markdown-v1" }
+      },
+      "evidenceVersion": {
+        "schemaVersion": 1,
+        "kind": "evidenceVersion",
+        "evidenceVersionId": "evidence:policy:v1",
+        "sourceVersionIds": ["source-version:policy:v1"],
+        "adapterProfileId": "filesystem-markdown-v1",
+        "adapterProfileSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "coverageState": "complete",
+        "warningCodes": ["truncated-preview"],
+        "blockerCodes": [],
+        "canonicalOutputSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "structureRevision": {
+        "schemaVersion": 1,
+        "kind": "structureRevision",
+        "structureRevisionId": "structure:policy:v1",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureProfileId": "markdown-headings-v1",
+        "structureProfileSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "graphSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "projectionRevision": {
+        "schemaVersion": 1,
+        "kind": "projectionRevision",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionProfileSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "payloadSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "citationAddress": {
+        "schemaVersion": 1,
+        "kind": "citationAddress",
+        "evidenceVersionId": "evidence:policy:v1",
+        "structureRevisionId": "structure:policy:v1",
+        "projectionRevisionId": "projection:reviewer:v1",
+        "rootAnchorId": "anchor:policy",
+        "anchorId": "anchor:limitation",
+        "occurrenceId": "occurrence:1",
+        "selector": { "kind": "lineRange", "startLine": 88, "endLine": 103 },
+        "exactQuoteSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectionProfileId": "reviewer-markdown",
+        "projectionProfileVersion": "1",
+        "projectionPayloadSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "admittedByToolCallId": "tool-call:17"
+      },
+      "expectedError": "REFERENCE_MISMATCH"
+    }
+  ]
+}
