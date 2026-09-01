@@ -27,6 +27,29 @@ from sangrep_contracts import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+VECTOR_MANIFEST_PATHS = (
+    "schemas/v1/contracts.schema.json",
+    "schemas/sangrep-pack-manifest-v1.json",
+    "schemas/sangrep-pack-signature-v1.json",
+    "vectors/v1/identity-citation.json",
+    "vectors/v1/hierarchy-selectors.json",
+    "vectors/v1/pack-manifest.json",
+    "vectors/v1/pack-signing.json",
+    "trust/development-pack-roots-v1.json",
+)
+
+
+def _expected_vector_manifest() -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "files": [
+            {
+                "path": path,
+                "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest(),
+            }
+            for path in VECTOR_MANIFEST_PATHS
+        ],
+    }
 
 
 IDENTITY_READERS = {
@@ -385,7 +408,6 @@ def test_issue_30_schema_defs_are_frozen_except_citation_selector_dispatch() -> 
 def test_draft_vectors_match_schema_python_round_trip_chain_and_manifest() -> None:
     schema_bytes = (ROOT / "schemas/v1/contracts.schema.json").read_bytes()
     vector_bytes = (ROOT / "vectors/v1/identity-citation.json").read_bytes()
-    hierarchy_bytes = (ROOT / "vectors/v1/hierarchy-selectors.json").read_bytes()
     manifest = json.loads((ROOT / "vectors/v1/manifest.json").read_text(encoding="utf-8"))
     schema = json.loads(schema_bytes)
     vectors = json.loads(vector_bytes)
@@ -421,23 +443,7 @@ def test_draft_vectors_match_schema_python_round_trip_chain_and_manifest() -> No
         assert address.projection_profile_version == projection.projection_profile_version
         assert address.projection_payload_sha256 == projection.payload_sha256
 
-    assert manifest == {
-        "schemaVersion": 1,
-        "files": [
-            {
-                "path": "schemas/v1/contracts.schema.json",
-                "sha256": hashlib.sha256(schema_bytes).hexdigest(),
-            },
-            {
-                "path": "vectors/v1/identity-citation.json",
-                "sha256": hashlib.sha256(vector_bytes).hexdigest(),
-            },
-            {
-                "path": "vectors/v1/hierarchy-selectors.json",
-                "sha256": hashlib.sha256(hierarchy_bytes).hexdigest(),
-            },
-        ],
-    }
+    assert manifest == _expected_vector_manifest()
 
 
 def test_schema_negative_identity_vectors_are_rejected_by_schema_and_python() -> None:
@@ -560,7 +566,6 @@ def test_cross_reference_negative_vectors_are_rejected_by_conformance_check() ->
 
 def test_hierarchy_vectors_match_schema_python_round_trip_chain_and_manifest() -> None:
     schema_bytes = (ROOT / "schemas/v1/contracts.schema.json").read_bytes()
-    identity_bytes = (ROOT / "vectors/v1/identity-citation.json").read_bytes()
     hierarchy_bytes = (ROOT / "vectors/v1/hierarchy-selectors.json").read_bytes()
     manifest = json.loads((ROOT / "vectors/v1/manifest.json").read_text(encoding="utf-8"))
     schema = json.loads(schema_bytes)
@@ -602,23 +607,7 @@ def test_hierarchy_vectors_match_schema_python_round_trip_chain_and_manifest() -
         assert citation.digest == case["canonicalSha256"]
         assert citation.occurrence_id is not None
 
-    assert manifest == {
-        "schemaVersion": 1,
-        "files": [
-            {
-                "path": "schemas/v1/contracts.schema.json",
-                "sha256": hashlib.sha256(schema_bytes).hexdigest(),
-            },
-            {
-                "path": "vectors/v1/identity-citation.json",
-                "sha256": hashlib.sha256(identity_bytes).hexdigest(),
-            },
-            {
-                "path": "vectors/v1/hierarchy-selectors.json",
-                "sha256": hashlib.sha256(hierarchy_bytes).hexdigest(),
-            },
-        ],
-    }
+    assert manifest == _expected_vector_manifest()
 
 
 def test_hierarchy_schema_negative_vectors_are_rejected_by_schema_and_python() -> None:

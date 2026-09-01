@@ -6,12 +6,32 @@
       "sha256": "80bb2ea579fc15f936b36838e2d0a1e591413497c45aa2217d7c9123ad58fee1"
     },
     {
+      "path": "schemas/sangrep-pack-manifest-v1.json",
+      "sha256": "350a21fe5f321930652f3f0cb2dfb5264a42ab78527ade3a3c1f8c2216b22bf0"
+    },
+    {
+      "path": "schemas/sangrep-pack-signature-v1.json",
+      "sha256": "0ef17c385d847215033d8cd5b5d8f7213e3f0ba239dd91e6c643d2da5651e4cf"
+    },
+    {
       "path": "vectors/v1/identity-citation.json",
       "sha256": "f2ea8b7e4adade196d8d14ea5d1f04832de38f360c2ae10eb93afde0805c4a57"
     },
     {
       "path": "vectors/v1/hierarchy-selectors.json",
       "sha256": "cf4bd95e28f69e6082a373d4dfef681e7ea923011e6599bbca75d62bb806361c"
+    },
+    {
+      "path": "vectors/v1/pack-manifest.json",
+      "sha256": "d4998df1852d09a86807e91a99b58176e7b2d841623ecd93bdbda877684d6cb5"
+    },
+    {
+      "path": "vectors/v1/pack-signing.json",
+      "sha256": "4093a3fbae09dbf1c9e987623a347e0a1b2a66e9d75e7eee8776b2e4e8181c32"
+    },
+    {
+      "path": "trust/development-pack-roots-v1.json",
+      "sha256": "45b51d896118750bbb0132b62547b07d9c1342b11a2a90bfec0cfcce8cf03666"
     }
   ]
 }

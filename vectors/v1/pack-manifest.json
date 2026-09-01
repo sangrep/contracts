@@ -1,0 +1,1513 @@
+{
+  "schemaVersion": 1,
+  "kind": "sangrepPackManifestVectors",
+  "positiveCases": [
+    {
+      "name": "development-parser-pack",
+      "contract": "manifest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      },
+      "canonicalSha256": "f32b3e1b98d6711c906d229849751eda3f515a38338f40dcafe06bf23aa8c4a4"
+    },
+    {
+      "name": "remote-intelligence-pack",
+      "contract": "manifest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.analysis-core",
+        "version": "1.0.0-dev.1",
+        "family": "intelligence",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "remote",
+          "isolationProfile": "remoteServiceV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            },
+            {
+              "permission": "network.connect",
+              "required": true,
+              "reason": "Reach the declared synthetic endpoint."
+            },
+            {
+              "permission": "provider.invoke",
+              "required": true,
+              "reason": "Invoke the declared synthetic provider."
+            }
+          ],
+          "network": {
+            "destinations": [
+              "api.example.invalid"
+            ],
+            "retention": "none",
+            "region": "unspecified"
+          },
+          "provider": {
+            "providerId": "synthetic-provider",
+            "costModel": "providerPublished"
+          },
+          "userConsent": "required"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "intelligencePack",
+          "projectionContract": "explicitProjectionV1",
+          "resultContract": "reviewResultV1",
+          "receiptContract": "analysisReceiptV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.analysis-core",
+            "version": "1.0.0-dev.1",
+            "family": "intelligence",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "c1c66e6050b7cf5878cbdb191f51a8faceb81df9ff82babd41cce8423fda1f9b",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "YxB0nojp2W92PumV8J0ziT1fu6Hy2fdHcJ4xWGCv1FblM6sll1+FDQALny5IQj2IwOxlKC5Qwk48bNwO1lVyDA=="
+        }
+      },
+      "canonicalSha256": "247394faf3a33501b7d6783c6a58a3bcc6117b8308b7c17b3c2fd7eaf473a0c0"
+    },
+    {
+      "name": "development-catalog",
+      "contract": "catalog",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackCatalog",
+        "catalogId": "sangrep-development",
+        "version": "1.0.0-dev.1",
+        "channel": "development",
+        "entries": [
+          {
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "manifestUri": "https://example.invalid/text-core/manifest.json",
+            "manifestSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+            "archiveUri": "https://example.invalid/text-core/archive.tar.zst",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "dependencies": []
+          },
+          {
+            "packId": "sangrep.analysis-core",
+            "version": "1.0.0-dev.1",
+            "family": "intelligence",
+            "manifestUri": "https://example.invalid/analysis-core/manifest.json",
+            "manifestSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+            "archiveUri": "https://example.invalid/analysis-core/archive.tar.zst",
+            "archiveSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "dependencies": [
+              {
+                "packId": "sangrep.text-core",
+                "version": "1.0.0-dev.1"
+              }
+            ]
+          }
+        ]
+      },
+      "canonicalSha256": "ffc1254aef2e04b0ce237f366c9914b5d8fce8d2bbe830ed66e11897a5881998"
+    }
+  ],
+  "negativeCases": [
+    {
+      "name": "unknown-field",
+      "operation": "schema-manifest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "wrong-archive-digest",
+      "operation": "artifact-digests",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      },
+      "actualDigests": {
+        "archiveSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      }
+    },
+    {
+      "name": "incompatible-application-version",
+      "operation": "compatibility",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      },
+      "environment": {
+        "contractsVersion": "1.4.0",
+        "applicationVersion": "2.0.0",
+        "operatingSystem": "macos",
+        "architecture": "arm64",
+        "operatingSystemVersion": "14.2.0"
+      }
+    },
+    {
+      "name": "undeclared-network-permissions",
+      "operation": "manifest-runtime",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.analysis-core",
+        "version": "1.0.0-dev.1",
+        "family": "intelligence",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "remote",
+          "isolationProfile": "remoteServiceV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": {
+            "destinations": [
+              "api.example.invalid"
+            ],
+            "retention": "none",
+            "region": "unspecified"
+          },
+          "provider": {
+            "providerId": "synthetic-provider",
+            "costModel": "providerPublished"
+          },
+          "userConsent": "required"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "intelligencePack",
+          "projectionContract": "explicitProjectionV1",
+          "resultContract": "reviewResultV1",
+          "receiptContract": "analysisReceiptV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.analysis-core",
+            "version": "1.0.0-dev.1",
+            "family": "intelligence",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "1a6e3d6435fa9de398142433fa1259dfc17761ef9012168201df75dd47ad37d6",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "iKJImON9Qc6X7whMOtSvicPvEtVzo+VDMHtSTW+QB6liXZJu2HFGLVJuj+thLaQiWd9/3pfXIE20XoJ18NWnAw=="
+        }
+      }
+    },
+    {
+      "name": "dependency-cycle",
+      "operation": "catalog-dependencies",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackCatalog",
+        "catalogId": "sangrep-development",
+        "version": "1.0.0-dev.1",
+        "channel": "development",
+        "entries": [
+          {
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "manifestUri": "https://example.invalid/text-core/manifest.json",
+            "manifestSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+            "archiveUri": "https://example.invalid/text-core/archive.tar.zst",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "dependencies": [
+              {
+                "packId": "sangrep.analysis-core",
+                "version": "1.0.0-dev.1"
+              }
+            ]
+          },
+          {
+            "packId": "sangrep.analysis-core",
+            "version": "1.0.0-dev.1",
+            "family": "intelligence",
+            "manifestUri": "https://example.invalid/analysis-core/manifest.json",
+            "manifestSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+            "archiveUri": "https://example.invalid/analysis-core/archive.tar.zst",
+            "archiveSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "dependencies": [
+              {
+                "packId": "sangrep.text-core",
+                "version": "1.0.0-dev.1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "absent-sbom",
+      "operation": "schema-manifest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      }
+    },
+    {
+      "name": "absent-license",
+      "operation": "schema-manifest",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "sangrep",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      }
+    },
+    {
+      "name": "publisher-identity-mismatch",
+      "operation": "manifest-runtime",
+      "value": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackManifest",
+        "packId": "sangrep.text-core",
+        "version": "1.0.0-dev.1",
+        "family": "parser",
+        "publisher": {
+          "publisherId": "other",
+          "trustTier": "firstParty"
+        },
+        "channel": "development",
+        "maturity": "reviewableExperimental",
+        "limitations": [
+          "Synthetic conformance fixture only."
+        ],
+        "formats": {
+          "supported": [
+            "text/markdown",
+            "text/plain"
+          ],
+          "unsupported": [
+            "Encrypted input."
+          ]
+        },
+        "compatibility": {
+          "schemaVersion": 1,
+          "kind": "packCompatibility",
+          "contracts": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "application": {
+            "minimumInclusive": "1.0.0",
+            "maximumExclusive": "2.0.0"
+          },
+          "operatingSystems": [
+            {
+              "name": "macos",
+              "architectures": [
+                "arm64",
+                "x86_64"
+              ],
+              "minimumInclusive": "13.0.0",
+              "maximumExclusive": "16.0.0"
+            }
+          ],
+          "rollback": {
+            "minimumInclusive": "0.9.0",
+            "maximumExclusive": "2.0.0"
+          }
+        },
+        "resources": {
+          "schemaVersion": 1,
+          "kind": "packResources",
+          "compressedSizeBytes": 1024,
+          "installedSizeBytes": 2048,
+          "expectedPeakMemoryBytes": 4096,
+          "workerStartupProfile": "boundedSubprocess",
+          "workerStartupTimeoutMs": 5000
+        },
+        "execution": {
+          "mode": "local",
+          "isolationProfile": "processSandboxV1",
+          "entrypoints": [
+            {
+              "entrypointId": "parse",
+              "relativeExecutablePath": "bin/parser",
+              "protocol": "sangrepPackWorkerV1",
+              "arguments": []
+            }
+          ]
+        },
+        "permissions": {
+          "sourceDataClasses": [
+            "documentText"
+          ],
+          "grants": [
+            {
+              "permission": "source.read",
+              "required": true,
+              "reason": "Read bounded source bytes."
+            }
+          ],
+          "network": null,
+          "provider": null,
+          "userConsent": "notRequired"
+        },
+        "dependencies": [],
+        "payload": {
+          "schemaVersion": 1,
+          "kind": "parserPack",
+          "maximumInputBytes": 1048576,
+          "outputContract": "canonicalEvidenceV1",
+          "locatorContract": "sourceLocatorV1",
+          "entrypointId": "parse"
+        },
+        "provenance": {
+          "kind": "sourceArchive",
+          "uri": "https://example.invalid/text-core-1.0.0.tar.gz",
+          "revision": "v1.0.0",
+          "buildReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "digests": {
+          "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+        },
+        "license": {
+          "expression": "Apache-2.0",
+          "noticePath": "NOTICE",
+          "licensePaths": [
+            "LICENSE"
+          ]
+        },
+        "conformance": {
+          "schemaVersion": 1,
+          "kind": "packConformance",
+          "suiteId": "sangrep-pack-conformance",
+          "suiteVersion": "1.0.0",
+          "verdict": "passed",
+          "receiptSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepPackSignature",
+          "suite": "Ed25519",
+          "role": "packPublisher",
+          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepPackUnsignedEnvelope",
+            "packId": "sangrep.text-core",
+            "version": "1.0.0-dev.1",
+            "family": "parser",
+            "publisherId": "sangrep",
+            "channel": "development",
+            "manifestSha256": "d13bf6cff20dd2c3903812f0e3307f82908aa0910ed8f5dd84dc728e9b523645",
+            "archiveSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "payloadTreeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "sbomSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licenseBundleSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
+          },
+          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+        }
+      }
+    }
+  ]
+}

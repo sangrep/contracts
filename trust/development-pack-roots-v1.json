@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "sangrepPackTrustRoots",
+  "trustPolicyVersion": 1,
+  "roots": [
+    {
+      "keyId": "ed25519-sha256:348e4c2ff80ac926c23ceb273dbac9052794fb75ae3657c8d378872cc931b5c2",
+      "publicKey": "YfyPwfVyUOOneCQAXoUZZbN2uEwD7G8UIvrkoY9eGs8=",
+      "suite": "Ed25519",
+      "role": "packPublisher",
+      "publisherId": "sangrep",
+      "channels": [
+        "development"
+      ],
+      "custodyClass": "macos-keychain-when-unlocked-this-device-only",
+      "receiptDigest": "sha256:475a54178cecf4a8e856a6bc11e8fd8eae04887b2e3ba38b3d370ca40b4b585f",
+      "validFrom": null,
+      "validUntil": null
+    }
+  ],
+  "rotations": [],
+  "revocations": []
+}

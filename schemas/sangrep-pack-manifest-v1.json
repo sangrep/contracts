@@ -1,0 +1,909 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sangrep.com/contracts/sangrep-pack-manifest-v1.json",
+  "title": "Sangrep Pack Manifest v1",
+  "$ref": "#/$defs/SangrepPackManifestV1",
+  "$defs": {
+    "Sha256V1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "PackIdV1": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "CodeV1": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$"
+    },
+    "SemanticVersionV1": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "HttpsUriV1": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "RelativePathV1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+    },
+    "VersionRangeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumInclusive",
+        "maximumExclusive"
+      ],
+      "properties": {
+        "minimumInclusive": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "maximumExclusive": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        }
+      }
+    },
+    "OperatingSystemRangeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "architectures",
+        "minimumInclusive",
+        "maximumExclusive"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "architectures": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CodeV1"
+          }
+        },
+        "minimumInclusive": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "maximumExclusive": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        }
+      }
+    },
+    "PackCompatibilityV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "contracts",
+        "application",
+        "operatingSystems",
+        "rollback"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "packCompatibility"
+        },
+        "contracts": {
+          "$ref": "#/$defs/VersionRangeV1"
+        },
+        "application": {
+          "$ref": "#/$defs/VersionRangeV1"
+        },
+        "operatingSystems": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/OperatingSystemRangeV1"
+          }
+        },
+        "rollback": {
+          "$ref": "#/$defs/VersionRangeV1"
+        }
+      }
+    },
+    "PackResourcesV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "compressedSizeBytes",
+        "installedSizeBytes",
+        "expectedPeakMemoryBytes",
+        "workerStartupProfile",
+        "workerStartupTimeoutMs"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "packResources"
+        },
+        "compressedSizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "installedSizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "expectedPeakMemoryBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workerStartupProfile": {
+          "enum": [
+            "boundedSubprocess",
+            "sharedRuntime"
+          ]
+        },
+        "workerStartupTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "PackEntrypointV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entrypointId",
+        "relativeExecutablePath",
+        "protocol",
+        "arguments"
+      ],
+      "properties": {
+        "entrypointId": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "relativeExecutablePath": {
+          "$ref": "#/$defs/RelativePathV1"
+        },
+        "protocol": {
+          "const": "sangrepPackWorkerV1"
+        },
+        "arguments": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "PackExecutionV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "isolationProfile",
+        "entrypoints"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "local",
+            "remote",
+            "hybrid"
+          ]
+        },
+        "isolationProfile": {
+          "enum": [
+            "processSandboxV1",
+            "remoteServiceV1",
+            "hybridProcessV1"
+          ]
+        },
+        "entrypoints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/PackEntrypointV1"
+          }
+        }
+      }
+    },
+    "PackPermissionGrantV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "permission",
+        "required",
+        "reason"
+      ],
+      "properties": {
+        "permission": {
+          "enum": [
+            "source.read",
+            "temporaryStorage.write",
+            "network.connect",
+            "provider.invoke"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      }
+    },
+    "PackNetworkV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "destinations",
+        "retention",
+        "region"
+      ],
+      "properties": {
+        "destinations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$"
+          }
+        },
+        "retention": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "PackProviderV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "providerId",
+        "costModel"
+      ],
+      "properties": {
+        "providerId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "costModel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "PackPermissionsV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceDataClasses",
+        "grants",
+        "network",
+        "provider",
+        "userConsent"
+      ],
+      "properties": {
+        "sourceDataClasses": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CodeV1"
+          }
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PackPermissionGrantV1"
+          }
+        },
+        "network": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PackNetworkV1"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PackProviderV1"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "userConsent": {
+          "enum": [
+            "notRequired",
+            "required"
+          ]
+        }
+      }
+    },
+    "PackDependencyV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packId",
+        "version"
+      ],
+      "properties": {
+        "packId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        }
+      }
+    },
+    "ParserPackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "maximumInputBytes",
+        "outputContract",
+        "locatorContract",
+        "entrypointId"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "parserPack"
+        },
+        "maximumInputBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "outputContract": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "locatorContract": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "entrypointId": {
+          "$ref": "#/$defs/CodeV1"
+        }
+      }
+    },
+    "IntelligencePackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectionContract",
+        "resultContract",
+        "receiptContract",
+        "entrypointId"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "intelligencePack"
+        },
+        "projectionContract": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "resultContract": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "receiptContract": {
+          "$ref": "#/$defs/CodeV1"
+        },
+        "entrypointId": {
+          "$ref": "#/$defs/CodeV1"
+        }
+      }
+    },
+    "PackProvenanceV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "uri",
+        "revision",
+        "buildReceiptSha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "sourceArchive",
+            "buildReceipt"
+          ]
+        },
+        "uri": {
+          "$ref": "#/$defs/HttpsUriV1"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "buildReceiptSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        }
+      }
+    },
+    "PackDigestsV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archiveSha256",
+        "payloadTreeSha256",
+        "sbomSha256",
+        "licenseBundleSha256",
+        "conformanceReceiptSha256",
+        "compatibilityContractSha256"
+      ],
+      "properties": {
+        "archiveSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "payloadTreeSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "sbomSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "licenseBundleSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "conformanceReceiptSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "compatibilityContractSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        }
+      }
+    },
+    "PackLicenseV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expression",
+        "noticePath",
+        "licensePaths"
+      ],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "noticePath": {
+          "$ref": "#/$defs/RelativePathV1"
+        },
+        "licensePaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RelativePathV1"
+          }
+        }
+      }
+    },
+    "PackConformanceV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "suiteId",
+        "suiteVersion",
+        "verdict",
+        "receiptSha256"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "packConformance"
+        },
+        "suiteId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "suiteVersion": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "verdict": {
+          "enum": [
+            "passed",
+            "failed",
+            "notQualified"
+          ]
+        },
+        "receiptSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        }
+      }
+    },
+    "PackPublisherV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publisherId",
+        "trustTier"
+      ],
+      "properties": {
+        "publisherId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "trustTier": {
+          "enum": [
+            "firstParty",
+            "verifiedCommunity",
+            "community"
+          ]
+        }
+      }
+    },
+    "PackFormatsV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported",
+        "unsupported"
+      ],
+      "properties": {
+        "supported": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
+          }
+        },
+        "unsupported": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "SangrepPackManifestV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "packId",
+        "version",
+        "family",
+        "publisher",
+        "channel",
+        "maturity",
+        "limitations",
+        "formats",
+        "compatibility",
+        "resources",
+        "execution",
+        "permissions",
+        "dependencies",
+        "payload",
+        "provenance",
+        "digests",
+        "license",
+        "conformance",
+        "signature"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepPackManifest"
+        },
+        "packId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "family": {
+          "enum": [
+            "parser",
+            "intelligence"
+          ]
+        },
+        "publisher": {
+          "$ref": "#/$defs/PackPublisherV1"
+        },
+        "channel": {
+          "enum": [
+            "development",
+            "prerelease",
+            "release"
+          ]
+        },
+        "maturity": {
+          "enum": [
+            "reviewableExperimental",
+            "previewable",
+            "graduated"
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "formats": {
+          "$ref": "#/$defs/PackFormatsV1"
+        },
+        "compatibility": {
+          "$ref": "#/$defs/PackCompatibilityV1"
+        },
+        "resources": {
+          "$ref": "#/$defs/PackResourcesV1"
+        },
+        "execution": {
+          "$ref": "#/$defs/PackExecutionV1"
+        },
+        "permissions": {
+          "$ref": "#/$defs/PackPermissionsV1"
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/PackDependencyV1"
+          }
+        },
+        "payload": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ParserPackV1"
+            },
+            {
+              "$ref": "#/$defs/IntelligencePackV1"
+            }
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/PackProvenanceV1"
+        },
+        "digests": {
+          "$ref": "#/$defs/PackDigestsV1"
+        },
+        "license": {
+          "$ref": "#/$defs/PackLicenseV1"
+        },
+        "conformance": {
+          "$ref": "#/$defs/PackConformanceV1"
+        },
+        "signature": {
+          "$ref": "https://schemas.sangrep.com/contracts/sangrep-pack-signature-v1.json#/$defs/SangrepPackSignatureV1"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "parser"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/ParserPackV1"
+              },
+              "execution": {
+                "properties": {
+                  "mode": {
+                    "const": "local"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/IntelligencePackV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "remote",
+                      "hybrid"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "permissions": {
+                "properties": {
+                  "network": {
+                    "$ref": "#/$defs/PackNetworkV1"
+                  },
+                  "provider": {
+                    "$ref": "#/$defs/PackProviderV1"
+                  },
+                  "userConsent": {
+                    "const": "required"
+                  },
+                  "grants": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "properties": {
+                            "permission": {
+                              "const": "network.connect"
+                            }
+                          },
+                          "required": [
+                            "permission"
+                          ]
+                        }
+                      },
+                      {
+                        "contains": {
+                          "properties": {
+                            "permission": {
+                              "const": "provider.invoke"
+                            }
+                          },
+                          "required": [
+                            "permission"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PackCatalogEntryV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packId",
+        "version",
+        "family",
+        "manifestUri",
+        "manifestSha256",
+        "archiveUri",
+        "archiveSha256",
+        "dependencies"
+      ],
+      "properties": {
+        "packId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "family": {
+          "enum": [
+            "parser",
+            "intelligence"
+          ]
+        },
+        "manifestUri": {
+          "$ref": "#/$defs/HttpsUriV1"
+        },
+        "manifestSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "archiveUri": {
+          "$ref": "#/$defs/HttpsUriV1"
+        },
+        "archiveSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/PackDependencyV1"
+          }
+        }
+      }
+    },
+    "SangrepPackCatalogV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "catalogId",
+        "version",
+        "channel",
+        "entries"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepPackCatalog"
+        },
+        "catalogId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "channel": {
+          "enum": [
+            "development",
+            "prerelease",
+            "release"
+          ]
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PackCatalogEntryV1"
+          }
+        }
+      }
+    }
+  }
+}

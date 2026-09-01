@@ -18,13 +18,19 @@ def test_issue_33_allowed_contract_modules_are_explicit() -> None:
         "filesystem.py",
         "hierarchy.py",
         "identity.py",
+        "pack.py",
+        "pack_signing.py",
     }
 
 
 ALLOWED_ABSOLUTE_IMPORT_ROOTS = frozenset(
     {
         "__future__",
+        "base64",
+        "binascii",
+        "collections",
         "dataclasses",
+        "datetime",
         "enum",
         "hashlib",
         "json",
@@ -80,3 +86,14 @@ def test_configured_hatch_force_includes_have_reproducible_sources() -> None:
     missing_sources = [source for source in force_include if not (PACKAGE_ROOT / source).exists()]
 
     assert missing_sources == []
+
+
+def test_wheel_includes_schemas_vectors_and_development_public_roots() -> None:
+    project = tomllib.loads((PACKAGE_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    force_include = project["tool"]["hatch"]["build"]["targets"]["wheel"]["force-include"]
+
+    assert force_include == {
+        "schemas": "sangrep_contracts/schemas",
+        "vectors": "sangrep_contracts/vectors",
+        "trust": "sangrep_contracts/trust",
+    }
