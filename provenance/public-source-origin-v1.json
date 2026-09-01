@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "repositoryLicense": "Apache-2.0",
+  "sourceClassifications": [
+    {
+      "path": "src",
+      "origin": "original",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "schemas",
+      "origin": "original",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "vectors",
+      "origin": "synthetic-conformance-data",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "trust",
+      "origin": "public-verification-data",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "tools",
+      "origin": "original",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "tests",
+      "origin": "original-and-synthetic-tests",
+      "license": "Apache-2.0"
+    }
+  ],
+  "generatedArtifacts": [
+    {
+      "path": "src/sangrep_contracts/generated/pack_manifest_v1.py",
+      "generator": "tools/build_schema_types.py"
+    },
+    {
+      "path": "src/sangrep_contracts/generated/pack_signature_v1.py",
+      "generator": "tools/build_schema_types.py"
+    },
+    {
+      "path": "vectors/v1/manifest.json",
+      "generator": "tools/build_vector_manifest.py"
+    },
+    {
+      "path": "vectors/v1/pack-manifest.json",
+      "generator": "tools/build_pack_vectors.py"
+    },
+    {
+      "path": "vectors/v1/pack-signing.json",
+      "generator": "tools/build_pack_vectors.py"
+    }
+  ],
+  "licenseTexts": [
+    {
+      "path": "LICENSE",
+      "source": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  ],
+  "thirdPartySourceFiles": []
+}

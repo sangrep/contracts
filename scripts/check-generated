@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+run_silently() {
+  local output
+  if ! output=$("$@" 2>&1); then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+}
+
+run_silently uv run --frozen --extra dev python tools/build_schema_types.py --check
+run_silently uv run --frozen --extra dev python tools/build_pack_vectors.py --check
+run_silently uv run --frozen --extra dev python tools/build_vector_manifest.py --check
+printf 'generated-check: passed\n'

@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+
+ROOT = Path(__file__).resolve().parents[1]
+LICENSE_SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+PROVENANCE_PATH = ROOT / "provenance/public-source-origin-v1.json"
+EXPECTED_CLASSIFICATIONS = {
+    "src": "original",
+    "schemas": "original",
+    "vectors": "synthetic-conformance-data",
+    "trust": "public-verification-data",
+    "tools": "original",
+    "tests": "original-and-synthetic-tests",
+}
+EXPECTED_GENERATED = {
+    "src/sangrep_contracts/generated/pack_manifest_v1.py": "tools/build_schema_types.py",
+    "src/sangrep_contracts/generated/pack_signature_v1.py": "tools/build_schema_types.py",
+    "vectors/v1/manifest.json": "tools/build_vector_manifest.py",
+    "vectors/v1/pack-manifest.json": "tools/build_pack_vectors.py",
+    "vectors/v1/pack-signing.json": "tools/build_pack_vectors.py",
+}
+EXPECTED_DEV_DEPENDENCIES = {
+    "cryptography>=50,<51",
+    "jsonschema>=4.23,<5",
+    "mypy>=1.13",
+    "pip-audit>=2.10,<3",
+    "pytest>=8",
+    "ruff>=0.8,<0.9",
+}
+
+
+def _git_paths(arguments: list[str]) -> set[str]:
+    completed = subprocess.run(
+        ["git", *arguments],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    return {
+        value.decode("utf-8", errors="strict") for value in completed.stdout.split(b"\0") if value
+    }
+
+
+def _candidate_paths() -> set[str]:
+    return _git_paths(["ls-files", "-z"]) | _git_paths(
+        ["ls-files", "--others", "--exclude-standard", "-z"]
+    )
+
+
+def _blocked(reason: str) -> int:
+    print(f"license-check: blocked reason={reason}", file=sys.stderr)
+    return 1
+
+
+def main() -> int:
+    required = (ROOT / "LICENSE", ROOT / "NOTICE", ROOT / "ORIGIN.md", PROVENANCE_PATH)
+    if any(not path.is_file() or path.is_symlink() for path in required):
+        return _blocked("required-file")
+    if hashlib.sha256((ROOT / "LICENSE").read_bytes()).hexdigest() != LICENSE_SHA256:
+        return _blocked("license-text")
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    if (
+        project.get("license") != "Apache-2.0"
+        or project.get("license-files") != ["LICENSE"]
+        or project.get("dependencies") != []
+    ):
+        return _blocked("package-license")
+    dev_dependencies = set(project.get("optional-dependencies", {}).get("dev", []))
+    if dev_dependencies != EXPECTED_DEV_DEPENDENCIES:
+        return _blocked("development-dependency-policy")
+    try:
+        provenance = json.loads(PROVENANCE_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return _blocked("provenance-json")
+    if not isinstance(provenance, dict) or set(provenance) != {
+        "schemaVersion",
+        "repositoryLicense",
+        "sourceClassifications",
+        "generatedArtifacts",
+        "licenseTexts",
+        "thirdPartySourceFiles",
+    }:
+        return _blocked("provenance-fields")
+    if provenance["schemaVersion"] != 1 or provenance["repositoryLicense"] != "Apache-2.0":
+        return _blocked("provenance-license")
+    classifications = provenance["sourceClassifications"]
+    if not isinstance(classifications, list):
+        return _blocked("source-classifications")
+    actual_classifications: dict[str, str] = {}
+    for item in classifications:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"path", "origin", "license"}
+            or item.get("license") != "Apache-2.0"
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("origin"), str)
+        ):
+            return _blocked("source-classification-entry")
+        actual_classifications[item["path"]] = item["origin"]
+    if actual_classifications != EXPECTED_CLASSIFICATIONS:
+        return _blocked("source-classification-coverage")
+    candidates = _candidate_paths()
+    for path in candidates:
+        root_name = path.split("/", maxsplit=1)[0]
+        if root_name in EXPECTED_CLASSIFICATIONS:
+            candidate = ROOT / path
+            if not candidate.is_file() or candidate.is_symlink():
+                return _blocked("classified-path-shape")
+    for root_name in EXPECTED_CLASSIFICATIONS:
+        if not any(path == root_name or path.startswith(f"{root_name}/") for path in candidates):
+            return _blocked("classified-root-empty")
+    generated = provenance["generatedArtifacts"]
+    if not isinstance(generated, list):
+        return _blocked("generated-artifacts")
+    actual_generated: dict[str, str] = {}
+    for item in generated:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"path", "generator"}
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("generator"), str)
+        ):
+            return _blocked("generated-artifact-entry")
+        actual_generated[item["path"]] = item["generator"]
+    if actual_generated != EXPECTED_GENERATED:
+        return _blocked("generated-artifact-coverage")
+    if any(
+        path not in candidates or generator not in candidates
+        for path, generator in actual_generated.items()
+    ):
+        return _blocked("generated-artifact-path")
+    license_texts = provenance["licenseTexts"]
+    if license_texts != [
+        {
+            "path": "LICENSE",
+            "source": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+            "sha256": LICENSE_SHA256,
+        }
+    ]:
+        return _blocked("license-provenance")
+    if provenance["thirdPartySourceFiles"] != []:
+        return _blocked("third-party-source")
+    print("license-check: passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sangrep.com/contracts/sangrep-pack-signature-v1.json",
+  "title": "Sangrep Pack Signature v1",
+  "$ref": "#/$defs/SangrepPackSignatureV1",
+  "$defs": {
+    "Sha256V1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ReceiptSha256V1": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "PackIdV1": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "SemanticVersionV1": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "KeyIdV1": {
+      "type": "string",
+      "pattern": "^ed25519-sha256:[0-9a-f]{64}$"
+    },
+    "PublicKeyBase64V1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{43}=$"
+    },
+    "SignatureBase64V1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{86}==$"
+    },
+    "Rfc3339UtcSecondV1": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "SangrepPackUnsignedEnvelopeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "packId",
+        "version",
+        "family",
+        "publisherId",
+        "channel",
+        "manifestSha256",
+        "archiveSha256",
+        "payloadTreeSha256",
+        "sbomSha256",
+        "licenseBundleSha256",
+        "conformanceReceiptSha256",
+        "compatibilityContractSha256"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepPackUnsignedEnvelope"
+        },
+        "packId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "family": {
+          "enum": [
+            "parser",
+            "intelligence"
+          ]
+        },
+        "publisherId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "channel": {
+          "enum": [
+            "development",
+            "prerelease",
+            "release"
+          ]
+        },
+        "manifestSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "archiveSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "payloadTreeSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "sbomSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "licenseBundleSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "conformanceReceiptSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        },
+        "compatibilityContractSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        }
+      }
+    },
+    "SangrepPackSignatureV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "suite",
+        "role",
+        "keyId",
+        "unsignedEnvelope",
+        "signatureBase64"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepPackSignature"
+        },
+        "suite": {
+          "const": "Ed25519"
+        },
+        "role": {
+          "enum": [
+            "packPublisher",
+            "catalog"
+          ]
+        },
+        "keyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "unsignedEnvelope": {
+          "$ref": "#/$defs/SangrepPackUnsignedEnvelopeV1"
+        },
+        "signatureBase64": {
+          "$ref": "#/$defs/SignatureBase64V1"
+        }
+      }
+    },
+    "PackTrustRootV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keyId",
+        "publicKey",
+        "suite",
+        "role",
+        "publisherId",
+        "channels",
+        "custodyClass",
+        "receiptDigest",
+        "validFrom",
+        "validUntil"
+      ],
+      "properties": {
+        "keyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "publicKey": {
+          "$ref": "#/$defs/PublicKeyBase64V1"
+        },
+        "suite": {
+          "const": "Ed25519"
+        },
+        "role": {
+          "enum": [
+            "packPublisher",
+            "catalog"
+          ]
+        },
+        "publisherId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "development",
+              "prerelease",
+              "release"
+            ]
+          }
+        },
+        "custodyClass": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "receiptDigest": {
+          "$ref": "#/$defs/ReceiptSha256V1"
+        },
+        "validFrom": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "validUntil": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        }
+      }
+    },
+    "PackRotationV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fromKeyId",
+        "toKeyId",
+        "overlapStartsAt",
+        "overlapEndsAt"
+      ],
+      "properties": {
+        "fromKeyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "toKeyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "overlapStartsAt": {
+          "$ref": "#/$defs/Rfc3339UtcSecondV1"
+        },
+        "overlapEndsAt": {
+          "$ref": "#/$defs/Rfc3339UtcSecondV1"
+        }
+      }
+    },
+    "PackRevocationV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keyId",
+        "revokedAt",
+        "reason"
+      ],
+      "properties": {
+        "keyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "revokedAt": {
+          "$ref": "#/$defs/Rfc3339UtcSecondV1"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      }
+    },
+    "SangrepPackTrustRootsV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "trustPolicyVersion",
+        "roots",
+        "rotations",
+        "revocations"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepPackTrustRoots"
+        },
+        "trustPolicyVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/PackTrustRootV1"
+          }
+        },
+        "rotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PackRotationV1"
+          }
+        },
+        "revocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PackRevocationV1"
+          }
+        }
+      }
+    }
+  }
+}

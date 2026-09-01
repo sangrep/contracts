@@ -1,0 +1,742 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sangrep:contracts:draft:text-profile:v1",
+  "title": "Sangrep review contracts draft text profile v1",
+  "$comment": "This draft schema is a structural gate for canonical JSON v1. Portable JSON Schema 2020-12 cannot distinguish lexical 1 from 1.0, so canonical JSON and Python conformance validation remain required.",
+  "oneOf": [
+    { "$ref": "#/$defs/sourceObjectVersion" },
+    { "$ref": "#/$defs/evidenceVersion" },
+    { "$ref": "#/$defs/structureRevision" },
+    { "$ref": "#/$defs/projectionRevision" },
+    { "$ref": "#/$defs/citationAddress" },
+    { "$ref": "#/$defs/filesystemInventoryEntry" },
+    { "$ref": "#/$defs/filesystemSnapshot" },
+    { "$ref": "#/$defs/evidenceNode" },
+    { "$ref": "#/$defs/projectedNode" }
+  ],
+  "$defs": {
+    "noJsonLineTerminators": {
+      "not": { "pattern": "[\\n\\r\\u2028\\u2029]" }
+    },
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "allOf": [
+        { "$ref": "#/$defs/noJsonLineTerminators" },
+        { "pattern": "^[0-9a-f]{64}$" }
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "maxLength": 128,
+      "allOf": [
+        { "$ref": "#/$defs/noJsonLineTerminators" },
+        { "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" }
+      ]
+    },
+    "safeNonNegativeInteger": {
+      "$comment": "Schema integer accepts JSON numbers such as 1.0 in many validators; canonical JSON validation rejects floats before this structural schema is authoritative.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "safePositiveInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "allOf": [
+        { "$ref": "#/$defs/noJsonLineTerminators" },
+        {
+          "oneOf": [
+            { "const": "." },
+            {
+              "not": {
+                "pattern": "(^/|/$|\\\\|\\u0000|(^|/)(\\.|\\.\\.)(/|$)|//|^[A-Za-z][A-Za-z0-9+.-]*:|^[A-Za-z]:)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "filesystemEntryKind": {
+      "enum": ["directory", "file", "symlink", "special"]
+    },
+    "filesystemEntryStatus": {
+      "enum": ["admitted", "inventoried", "blocked", "omitted"]
+    },
+    "textEncodingProfile": {
+      "enum": ["utf8", "utf8Bom", "ascii", "unsupported", "unknown"]
+    },
+    "newlineProfile": {
+      "enum": ["lf", "crlf", "cr", "mixed", "none", "unknown"]
+    },
+    "containmentKind": {
+      "enum": ["physical", "semantic", "embedded", "reference", "derivedOverlay"]
+    },
+    "evidenceNodeKind": {
+      "enum": [
+        "root",
+        "document",
+        "section",
+        "heading",
+        "paragraph",
+        "list",
+        "listItem",
+        "table",
+        "tableRow",
+        "tableCell",
+        "page",
+        "media",
+        "codeBlock",
+        "blockquote",
+        "omission",
+        "unknown"
+      ]
+    },
+    "projectionPayloadKind": {
+      "enum": ["text", "markdown", "html", "jsonBlocks", "thumbnail", "mediaEnvelope", "empty"]
+    },
+    "projectionInclusionState": {
+      "enum": ["included", "excluded", "summarized", "redacted", "omitted"]
+    },
+    "citableState": {
+      "enum": ["citable", "notCitable", "limited"]
+    },
+    "code": {
+      "type": "string",
+      "maxLength": 64,
+      "allOf": [
+        { "$ref": "#/$defs/noJsonLineTerminators" },
+        { "pattern": "^[a-z][a-z0-9_.-]{0,63}$" }
+      ]
+    },
+    "mediaType": {
+      "type": "string",
+      "allOf": [
+        { "$ref": "#/$defs/noJsonLineTerminators" },
+        { "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$" }
+      ]
+    },
+    "sourceObjectVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "sourceObjectId",
+        "sourceVersionId",
+        "objectKind",
+        "byteSize",
+        "contentSha256",
+        "mediaType",
+        "custodyState",
+        "provenance"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "sourceObjectVersion" },
+        "sourceObjectId": { "$ref": "#/$defs/identifier" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "objectKind": {
+          "enum": [
+            "file",
+            "blob",
+            "packagePart",
+            "embeddedOccurrence",
+            "pageImage",
+            "other"
+          ]
+        },
+        "byteSize": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "contentSha256": { "$ref": "#/$defs/sha256" },
+        "mediaType": { "$ref": "#/$defs/mediaType" },
+        "custodyState": {
+          "enum": ["externalReadOnly", "retainedCopy", "ephemeral", "unavailable"]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "evidenceVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "evidenceVersionId",
+        "sourceVersionIds",
+        "adapterProfileId",
+        "adapterProfileSha256",
+        "coverageState",
+        "warningCodes",
+        "blockerCodes",
+        "canonicalOutputSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "evidenceVersion" },
+        "evidenceVersionId": { "$ref": "#/$defs/identifier" },
+        "sourceVersionIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        },
+        "adapterProfileId": { "$ref": "#/$defs/identifier" },
+        "adapterProfileSha256": { "$ref": "#/$defs/sha256" },
+        "coverageState": { "enum": ["complete", "partial", "blocked"] },
+        "warningCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "blockerCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "canonicalOutputSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "structureRevision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "structureRevisionId",
+        "evidenceVersionId",
+        "structureProfileId",
+        "structureProfileSha256",
+        "graphSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "structureRevision" },
+        "structureRevisionId": { "$ref": "#/$defs/identifier" },
+        "evidenceVersionId": { "$ref": "#/$defs/identifier" },
+        "structureProfileId": { "$ref": "#/$defs/identifier" },
+        "structureProfileSha256": { "$ref": "#/$defs/sha256" },
+        "graphSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "projectionRevision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectionRevisionId",
+        "structureRevisionId",
+        "projectionProfileId",
+        "projectionProfileVersion",
+        "projectionProfileSha256",
+        "payloadSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "projectionRevision" },
+        "projectionRevisionId": { "$ref": "#/$defs/identifier" },
+        "structureRevisionId": { "$ref": "#/$defs/identifier" },
+        "projectionProfileId": { "$ref": "#/$defs/identifier" },
+        "projectionProfileVersion": { "$ref": "#/$defs/identifier" },
+        "projectionProfileSha256": { "$ref": "#/$defs/sha256" },
+        "payloadSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "filesystemInventoryEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "entryId",
+        "parentEntryId",
+        "entryKind",
+        "status",
+        "relativePath",
+        "ordinal",
+        "byteSize",
+        "contentSha256",
+        "mediaType",
+        "encodingProfile",
+        "newlineProfile",
+        "sourceVersionId",
+        "warningCodes",
+        "omissionCodes"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "filesystemInventoryEntry" },
+        "entryId": { "$ref": "#/$defs/identifier" },
+        "parentEntryId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "entryKind": { "$ref": "#/$defs/filesystemEntryKind" },
+        "status": { "$ref": "#/$defs/filesystemEntryStatus" },
+        "relativePath": { "$ref": "#/$defs/safeRelativePath" },
+        "ordinal": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "byteSize": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/safeNonNegativeInteger" }]
+        },
+        "contentSha256": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }]
+        },
+        "mediaType": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/mediaType" }]
+        },
+        "encodingProfile": { "$ref": "#/$defs/textEncodingProfile" },
+        "newlineProfile": { "$ref": "#/$defs/newlineProfile" },
+        "sourceVersionId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "warningCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "omissionCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        }
+      }
+    },
+    "filesystemSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "snapshotId",
+        "admittedRootId",
+        "adapterProfileId",
+        "adapterProfileSha256",
+        "inventoryEntries",
+        "rootSourceVersionId",
+        "limitCodes",
+        "snapshotSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "filesystemSnapshot" },
+        "snapshotId": { "$ref": "#/$defs/identifier" },
+        "admittedRootId": { "$ref": "#/$defs/identifier" },
+        "adapterProfileId": { "$ref": "#/$defs/identifier" },
+        "adapterProfileSha256": { "$ref": "#/$defs/sha256" },
+        "inventoryEntries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/filesystemInventoryEntry" }
+        },
+        "rootSourceVersionId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "limitCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "snapshotSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "filesystemInventoryEntryLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "snapshotId", "entryId"],
+      "properties": {
+        "kind": { "const": "filesystemInventoryEntry" },
+        "snapshotId": { "$ref": "#/$defs/identifier" },
+        "entryId": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "textFileLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourceVersionId",
+        "relativePath",
+        "startLine",
+        "endLine",
+        "startOffset",
+        "endOffset"
+      ],
+      "properties": {
+        "kind": { "const": "textFile" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "relativePath": { "$ref": "#/$defs/safeRelativePath" },
+        "startLine": { "$ref": "#/$defs/safePositiveInteger" },
+        "endLine": { "$ref": "#/$defs/safePositiveInteger" },
+        "startOffset": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "endOffset": { "$ref": "#/$defs/safePositiveInteger" }
+      }
+    },
+    "sectionLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sourceVersionId", "sectionOrdinalPath"],
+      "properties": {
+        "kind": { "const": "section" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "sectionOrdinalPath": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/safeNonNegativeInteger" }
+        }
+      }
+    },
+    "tableRangeLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourceVersionId",
+        "tableOrdinalPath",
+        "startRow",
+        "endRow",
+        "startColumn",
+        "endColumn"
+      ],
+      "properties": {
+        "kind": { "const": "tableRange" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "tableOrdinalPath": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/safeNonNegativeInteger" }
+        },
+        "startRow": { "$ref": "#/$defs/safePositiveInteger" },
+        "endRow": { "$ref": "#/$defs/safePositiveInteger" },
+        "startColumn": { "$ref": "#/$defs/safePositiveInteger" },
+        "endColumn": { "$ref": "#/$defs/safePositiveInteger" }
+      }
+    },
+    "pageRegionLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourceVersionId",
+        "pageNumber",
+        "x",
+        "y",
+        "width",
+        "height",
+        "coordinateProfile"
+      ],
+      "properties": {
+        "kind": { "const": "pageRegion" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "pageNumber": { "$ref": "#/$defs/safePositiveInteger" },
+        "x": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "y": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "width": { "$ref": "#/$defs/safePositiveInteger" },
+        "height": { "$ref": "#/$defs/safePositiveInteger" },
+        "coordinateProfile": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "mediaRegionLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourceVersionId",
+        "mediaObjectId",
+        "x",
+        "y",
+        "width",
+        "height",
+        "coordinateProfile"
+      ],
+      "properties": {
+        "kind": { "const": "mediaRegion" },
+        "sourceVersionId": { "$ref": "#/$defs/identifier" },
+        "mediaObjectId": { "$ref": "#/$defs/identifier" },
+        "x": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "y": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "width": { "$ref": "#/$defs/safePositiveInteger" },
+        "height": { "$ref": "#/$defs/safePositiveInteger" },
+        "coordinateProfile": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "sourceLocator": {
+      "oneOf": [
+        { "$ref": "#/$defs/filesystemInventoryEntryLocator" },
+        { "$ref": "#/$defs/textFileLocator" },
+        { "$ref": "#/$defs/sectionLocator" },
+        { "$ref": "#/$defs/tableRangeLocator" },
+        { "$ref": "#/$defs/pageRegionLocator" },
+        { "$ref": "#/$defs/mediaRegionLocator" }
+      ]
+    },
+    "evidenceNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "evidenceVersionId",
+        "structureRevisionId",
+        "rootAnchorId",
+        "anchorId",
+        "occurrenceId",
+        "parentAnchorId",
+        "parentOccurrenceId",
+        "containmentKind",
+        "ordinal",
+        "nodeKind",
+        "title",
+        "structuralContent",
+        "sourceLocator",
+        "coverageState",
+        "warningCodes",
+        "omissionCodes",
+        "canonicalNodeSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "evidenceNode" },
+        "evidenceVersionId": { "$ref": "#/$defs/identifier" },
+        "structureRevisionId": { "$ref": "#/$defs/identifier" },
+        "rootAnchorId": { "$ref": "#/$defs/identifier" },
+        "anchorId": { "$ref": "#/$defs/identifier" },
+        "occurrenceId": { "$ref": "#/$defs/identifier" },
+        "parentAnchorId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "parentOccurrenceId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "containmentKind": { "$ref": "#/$defs/containmentKind" },
+        "ordinal": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "nodeKind": { "$ref": "#/$defs/evidenceNodeKind" },
+        "title": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "string",
+              "maxLength": 1048576,
+              "allOf": [{ "$ref": "#/$defs/noJsonLineTerminators" }]
+            }
+          ]
+        },
+        "structuralContent": { "type": "object" },
+        "sourceLocator": { "$ref": "#/$defs/sourceLocator" },
+        "coverageState": { "enum": ["complete", "partial", "blocked"] },
+        "warningCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "omissionCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "canonicalNodeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "projectedNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectionRevisionId",
+        "structureRevisionId",
+        "anchorId",
+        "occurrenceId",
+        "payloadKind",
+        "payload",
+        "inclusionState",
+        "citableState",
+        "limitationCodes",
+        "projectedPayloadSha256"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "projectedNode" },
+        "projectionRevisionId": { "$ref": "#/$defs/identifier" },
+        "structureRevisionId": { "$ref": "#/$defs/identifier" },
+        "anchorId": { "$ref": "#/$defs/identifier" },
+        "occurrenceId": { "$ref": "#/$defs/identifier" },
+        "payloadKind": { "$ref": "#/$defs/projectionPayloadKind" },
+        "payload": {},
+        "inclusionState": { "$ref": "#/$defs/projectionInclusionState" },
+        "citableState": { "$ref": "#/$defs/citableState" },
+        "limitationCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/code" }
+        },
+        "projectedPayloadSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "anchorId"],
+      "properties": {
+        "kind": { "const": "node" },
+        "anchorId": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "lineRangeSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "startLine", "endLine"],
+      "properties": {
+        "kind": { "const": "lineRange" },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "textSpanSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "startOffset", "endOffset"],
+      "properties": {
+        "kind": { "const": "textSpan" },
+        "startOffset": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "endOffset": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "sectionSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sectionOrdinalPath"],
+      "properties": {
+        "kind": { "const": "section" },
+        "sectionOrdinalPath": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/safeNonNegativeInteger" }
+        }
+      }
+    },
+    "tableRangeSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "tableOrdinalPath",
+        "startRow",
+        "endRow",
+        "startColumn",
+        "endColumn"
+      ],
+      "properties": {
+        "kind": { "const": "tableRange" },
+        "tableOrdinalPath": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/safeNonNegativeInteger" }
+        },
+        "startRow": { "$ref": "#/$defs/safePositiveInteger" },
+        "endRow": { "$ref": "#/$defs/safePositiveInteger" },
+        "startColumn": { "$ref": "#/$defs/safePositiveInteger" },
+        "endColumn": { "$ref": "#/$defs/safePositiveInteger" }
+      }
+    },
+    "pageRegionSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "pageNumber", "x", "y", "width", "height", "coordinateProfile"],
+      "properties": {
+        "kind": { "const": "pageRegion" },
+        "pageNumber": { "$ref": "#/$defs/safePositiveInteger" },
+        "x": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "y": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "width": { "$ref": "#/$defs/safePositiveInteger" },
+        "height": { "$ref": "#/$defs/safePositiveInteger" },
+        "coordinateProfile": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "mediaRegionSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "mediaObjectId", "x", "y", "width", "height", "coordinateProfile"],
+      "properties": {
+        "kind": { "const": "mediaRegion" },
+        "mediaObjectId": { "$ref": "#/$defs/identifier" },
+        "x": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "y": { "$ref": "#/$defs/safeNonNegativeInteger" },
+        "width": { "$ref": "#/$defs/safePositiveInteger" },
+        "height": { "$ref": "#/$defs/safePositiveInteger" },
+        "coordinateProfile": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "citationSelector": {
+      "oneOf": [
+        { "$ref": "#/$defs/nodeSelector" },
+        { "$ref": "#/$defs/lineRangeSelector" },
+        { "$ref": "#/$defs/textSpanSelector" },
+        { "$ref": "#/$defs/sectionSelector" },
+        { "$ref": "#/$defs/tableRangeSelector" },
+        { "$ref": "#/$defs/pageRegionSelector" },
+        { "$ref": "#/$defs/mediaRegionSelector" }
+      ]
+    },
+    "citationAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "evidenceVersionId",
+        "structureRevisionId",
+        "projectionRevisionId",
+        "rootAnchorId",
+        "anchorId",
+        "occurrenceId",
+        "selector",
+        "exactQuoteSha256",
+        "projectionProfileId",
+        "projectionProfileVersion",
+        "projectionPayloadSha256",
+        "admittedByToolCallId"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "citationAddress" },
+        "evidenceVersionId": { "$ref": "#/$defs/identifier" },
+        "structureRevisionId": { "$ref": "#/$defs/identifier" },
+        "projectionRevisionId": { "$ref": "#/$defs/identifier" },
+        "rootAnchorId": { "$ref": "#/$defs/identifier" },
+        "anchorId": { "$ref": "#/$defs/identifier" },
+        "occurrenceId": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/identifier" }]
+        },
+        "selector": { "$ref": "#/$defs/citationSelector" },
+        "exactQuoteSha256": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }]
+        },
+        "projectionProfileId": { "$ref": "#/$defs/identifier" },
+        "projectionProfileVersion": { "$ref": "#/$defs/identifier" },
+        "projectionPayloadSha256": { "$ref": "#/$defs/sha256" },
+        "admittedByToolCallId": { "$ref": "#/$defs/identifier" }
+      }
+    }
+  }
+}

@@ -3,9 +3,14 @@ set -euo pipefail
 
 required=(
   README.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md GOVERNANCE.md
-  AGENTS.md LICENSE NOTICE .github/CODEOWNERS .github/PULL_REQUEST_TEMPLATE.md
-  scripts/check scripts/check-gitleaks scripts/check-public-boundary scripts/audit-public-hosted-metadata
-  scripts/public_boundary_policy.py
+  AGENTS.md LICENSE NOTICE ORIGIN.md pyproject.toml uv.lock
+  provenance/public-source-origin-v1.json
+  schemas/sangrep-pack-manifest-v1.json schemas/sangrep-pack-signature-v1.json
+  trust/development-pack-roots-v1.json
+  .github/CODEOWNERS .github/PULL_REQUEST_TEMPLATE.md
+  scripts/check scripts/check-dependencies scripts/check-docs scripts/check-generated scripts/check-gitleaks
+  scripts/check-licenses scripts/check-package scripts/check-public-boundary
+  scripts/audit-public-hosted-metadata scripts/public_boundary_policy.py
 )
 
 for path in "${required[@]}"; do
@@ -22,7 +27,24 @@ fi
 
 python3 -c 'import ast, pathlib, sys; [ast.parse(pathlib.Path(path).read_text(encoding="utf-8"), filename=path) for path in sys.argv[1:]]' \
   scripts/public_boundary_policy.py scripts/check-public-boundary \
-  scripts/audit-public-hosted-metadata
+  scripts/audit-public-hosted-metadata scripts/check-docs scripts/check-licenses \
+  scripts/check-package
 ./scripts/check-gitleaks
 PYTHONDONTWRITEBYTECODE=1 ./scripts/check-public-boundary
+./scripts/check-licenses
+./scripts/check-dependencies
+./scripts/check-docs
+./scripts/check-generated
+uv run --frozen --extra dev pytest -q
+python_paths=(
+  src tests tools scripts/check-docs scripts/check-licenses scripts/check-package
+  scripts/check-public-boundary scripts/public_boundary_policy.py
+  scripts/audit-public-hosted-metadata
+)
+uv run --frozen --extra dev ruff check "${python_paths[@]}"
+uv run --frozen --extra dev ruff format --check "${python_paths[@]}"
+uv run --frozen --extra dev mypy src
+./scripts/check-package
+git diff --check
+git diff --cached --check
 printf 'repository-check: passed\n'
