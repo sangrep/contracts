@@ -182,7 +182,7 @@ def _project_github_hosted_runner_paths(data: bytes, *, repository: str) -> byte
         (runner_home + b".local", b"github-runner-local"),
     )
     projected = data
-    boundary = rb"(?=$|[/\s\x00'\"),.;:\x1b])"
+    boundary = rb"(?=$|/|[\s\x00]|['\")]+(?=$|[\s\x00]))"
     for root, replacement in replacements:
         projected = re.sub(re.escape(root) + boundary, replacement, projected)
     return projected

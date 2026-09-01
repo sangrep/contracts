@@ -16,6 +16,11 @@ from public_boundary_policy import scan_bytes  # noqa: E402
 
 RUNNER_HOME = b"/" + b"home" + b"/" + b"runner" + b"/"
 USER_HOME = b"/" + b"Users" + b"/"
+PROJECTED_ROOTS = (
+    RUNNER_HOME + b"work/contracts/contracts",
+    RUNNER_HOME + b"work/_temp",
+    RUNNER_HOME + b".local",
+)
 
 
 def _load_hosted_audit() -> ModuleType:
@@ -79,6 +84,32 @@ def test_hosted_audit_keeps_unknown_runner_and_user_paths_fail_closed() -> None:
         )
         categories = {finding.category for finding in scan_bytes(projected, source="unknown-path")}
         assert categories == {"local-absolute-path"}
+
+
+@pytest.mark.parametrize("root", PROJECTED_ROOTS)
+@pytest.mark.parametrize(
+    "continuation",
+    [
+        b".lookalike/example.txt",
+        b":lookalike/example.txt",
+        b",lookalike/example.txt",
+        b";lookalike/example.txt",
+    ],
+)
+def test_hosted_audit_keeps_punctuation_path_continuations_fail_closed(
+    root: bytes,
+    continuation: bytes,
+) -> None:
+    audit = _load_hosted_audit()
+    payload = root + continuation
+
+    projected = audit._project_github_hosted_runner_paths(
+        payload,
+        repository="sangrep/contracts",
+    )
+
+    categories = {finding.category for finding in scan_bytes(projected, source="lookalike-path")}
+    assert categories == {"local-absolute-path"}
 
 
 def test_hosted_audit_preserves_secret_scanning_inside_projected_path() -> None:
