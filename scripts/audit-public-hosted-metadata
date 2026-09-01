@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -169,7 +170,30 @@ def _list(endpoint: str, *, collection_key: str | None = None) -> list[dict[str,
     return rows
 
 
-def _scan_zip(payload: bytes, *, source: str) -> tuple[list[Finding], dict[str, Any]]:
+def _project_github_hosted_runner_paths(data: bytes, *, repository: str) -> bytes:
+    _, repository_name = repository.split("/", maxsplit=1)
+    runner_home = b"/" + b"home" + b"/" + b"runner" + b"/"
+    replacements = (
+        (
+            runner_home + f"work/{repository_name}/{repository_name}".encode(),
+            b"repository-root",
+        ),
+        (runner_home + b"work/_temp", b"github-runner-temp"),
+        (runner_home + b".local", b"github-runner-local"),
+    )
+    projected = data
+    boundary = rb"(?=$|[/\s\x00'\"),.;:\x1b])"
+    for root, replacement in replacements:
+        projected = re.sub(re.escape(root) + boundary, replacement, projected)
+    return projected
+
+
+def _scan_zip(
+    payload: bytes,
+    *,
+    source: str,
+    project_bytes: Callable[[bytes], bytes] | None = None,
+) -> tuple[list[Finding], dict[str, Any]]:
     if len(payload) > 64 * 1024 * 1024:
         raise HostedAuditError("hosted archive exceeds the audit download budget")
     findings: list[Finding] = []
@@ -193,9 +217,10 @@ def _scan_zip(payload: bytes, *, source: str) -> tuple[list[Finding], dict[str, 
                 raise HostedAuditError("expanded hosted archive exceeds the audit budget")
             data = archive.read(info)
             entry_source = f"{source}:{info.filename}"
+            scanned_data = project_bytes(data) if project_bytes is not None else data
             findings.extend(
                 scan_bytes(
-                    data,
+                    scanned_data,
                     source=entry_source,
                     suffix=Path(info.filename).suffix,
                 )
@@ -297,7 +322,14 @@ def collect_live_inventory(repository: str) -> tuple[dict[str, Any], list[Findin
             raise HostedAuditError("workflow job inventory returned the wrong shape")
         surfaces["workflowJobs"].extend(jobs["jobs"])
         log_payload = _gh(["api", f"{prefix}/actions/runs/{run_id}/logs"], binary=True)
-        log_findings, log_receipt = _scan_zip(log_payload, source=f"workflow-log:{run_id}")
+        log_findings, log_receipt = _scan_zip(
+            log_payload,
+            source=f"workflow-log:{run_id}",
+            project_bytes=lambda data: _project_github_hosted_runner_paths(
+                data,
+                repository=repository,
+            ),
+        )
         findings.extend(log_findings)
         surfaces["workflowLogs"].append({"runId": run_id, **log_receipt})
 
