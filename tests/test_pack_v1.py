@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 
 import pytest
 from pack_v1_fixtures import (
@@ -309,3 +310,11 @@ def test_semantic_version_parsing_rejects_oversized_numeric_components_with_type
 ) -> None:
     with pytest.raises(ContractValidationError, match="semantic version"):
         SemanticVersionV1.parse(value, field_name="semantic version")
+
+
+def test_manifest_rejects_json_escaped_lone_surrogate_version_with_typed_error() -> None:
+    payload = parser_manifest_json()
+    payload["version"] = json.loads(r'"\ud800.0.0"')
+
+    with pytest.raises(ContractValidationError, match="semantic version"):
+        SangrepPackManifestV1.from_json_obj(payload)

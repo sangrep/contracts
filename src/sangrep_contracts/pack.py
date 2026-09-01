@@ -71,7 +71,11 @@ class SemanticVersionV1:
     @classmethod
     def parse(cls, value: object, *, field_name: str) -> Self:
         text = _require_string(value, field_name=field_name)
-        if len(text.encode("utf-8")) > MAX_SEMANTIC_VERSION_BYTES:
+        try:
+            encoded_size = len(text.encode("utf-8"))
+        except UnicodeEncodeError as error:
+            raise ContractValidationError(f"{field_name} must be a semantic version.") from error
+        if encoded_size > MAX_SEMANTIC_VERSION_BYTES:
             raise ContractValidationError(f"{field_name} must be a bounded semantic version.")
         match = _SEMVER.fullmatch(text)
         if match is None:
