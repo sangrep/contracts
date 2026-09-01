@@ -22,5 +22,7 @@ security effects. Security findings follow [SECURITY.md](SECURITY.md).
 ## Licensing
 
 Contributions are accepted only under the repository's reviewed contribution and licensing terms.
-Those terms must be finalized before public source publication. Do not add third-party material
-without its exact provenance and license classification.
+Unless explicitly stated otherwise, contributions are licensed under Apache-2.0. Do not add
+third-party material without its exact public provenance, compatible license classification, and
+required NOTICE attribution. Update `ORIGIN.md` and `provenance/public-source-origin-v1.json` in the
+same change when provenance changes.

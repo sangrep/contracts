@@ -41,14 +41,15 @@ ALLOWED_ABSOLUTE_IMPORT_ROOTS = frozenset(
 )
 
 
-def test_distribution_has_no_runtime_dependencies_or_premature_license_claim() -> None:
+def test_distribution_has_no_runtime_dependencies_and_apache_license() -> None:
     project = tomllib.loads((PACKAGE_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
     assert project["project"]["name"] == "sangrep-contracts"
     assert project["project"]["version"] == "0.1.0.dev0"
     assert project["project"]["requires-python"] == ">=3.11"
     assert project["project"]["dependencies"] == []
-    assert "license" not in project["project"]
+    assert project["project"]["license"] == "Apache-2.0"
+    assert project["project"]["license-files"] == ["LICENSE"]
     assert (SOURCE_ROOT / "py.typed").read_bytes() == b""
 
 

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! uv lock --check >/dev/null 2>&1; then
+  printf 'dependency-check: blocked category=lock-drift\n' >&2
+  exit 1
+fi
+
+if ! uv run --frozen --extra dev pip-audit \
+  --local \
+  --skip-editable \
+  --progress-spinner off \
+  --desc off \
+  --format json \
+  >/dev/null 2>&1; then
+  printf 'dependency-check: blocked category=vulnerability-audit\n' >&2
+  exit 1
+fi
+
+printf 'dependency-check: passed\n'
