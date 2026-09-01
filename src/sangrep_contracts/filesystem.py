@@ -310,16 +310,41 @@ def _validate_snapshot_entries(entries: tuple[FilesystemInventoryEntryV1, ...]) 
         or root.ordinal != 0
     ):
         raise ContractValidationError("first inventory entry must be the admitted directory root.")
-    seen_entries: set[str] = set()
+    entries_by_id: dict[str, FilesystemInventoryEntryV1] = {}
     seen_sources: set[str] = set()
     ordinals_by_parent: dict[str | None, set[int]] = {}
     next_ordinal_by_parent: dict[str | None, int] = {}
     active_ancestor_ids: list[str] = []
     for entry in entries:
-        if entry.entry_id in seen_entries:
+        if entry.entry_id in entries_by_id:
             raise ContractValidationError("inventory_entries contains a duplicate entry_id.")
-        if entry.parent_entry_id is not None and entry.parent_entry_id not in seen_entries:
-            raise ContractValidationError("inventory entry parent must reference an earlier entry.")
+        if entry.parent_entry_id is not None:
+            parent = entries_by_id.get(entry.parent_entry_id)
+            if parent is None:
+                raise ContractValidationError(
+                    "inventory entry parent must reference an earlier entry."
+                )
+            if (
+                parent.entry_kind is not FilesystemEntryKindV1.DIRECTORY
+                or parent.status is not FilesystemEntryStatusV1.ADMITTED
+            ):
+                raise ContractValidationError(
+                    "inventory entry parent must be an admitted directory."
+                )
+            if parent.relative_path == ".":
+                direct_descendant = "/" not in entry.relative_path
+            else:
+                prefix = f"{parent.relative_path}/"
+                remainder = entry.relative_path.removeprefix(prefix)
+                direct_descendant = (
+                    entry.relative_path.startswith(prefix)
+                    and bool(remainder)
+                    and "/" not in remainder
+                )
+            if not direct_descendant:
+                raise ContractValidationError(
+                    "inventory entry path must be a direct path descendant of its parent."
+                )
         if active_ancestor_ids:
             while active_ancestor_ids[-1] != entry.parent_entry_id:
                 active_ancestor_ids.pop()
@@ -335,7 +360,7 @@ def _validate_snapshot_entries(entries: tuple[FilesystemInventoryEntryV1, ...]) 
         if entry.ordinal != expected:
             raise ContractValidationError("sibling ordinals must start at 0 without gaps.")
         next_ordinal_by_parent[entry.parent_entry_id] = expected + 1
-        seen_entries.add(entry.entry_id)
+        entries_by_id[entry.entry_id] = entry
         active_ancestor_ids.append(entry.entry_id)
         if entry.source_version_id is not None:
             if entry.source_version_id in seen_sources:

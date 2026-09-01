@@ -14,8 +14,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from sangrep_contracts import (
     JsonObjectValue,
     JsonValue,
-    canonical_json_bytes,
-    canonical_json_sha256,
+    rfc8785_json_bytes_v1,
+    rfc8785_json_sha256_v1,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,7 +137,7 @@ def _unsigned_parser_manifest() -> dict[str, object]:
             "sbomSha256": "3" * 64,
             "licenseBundleSha256": "4" * 64,
             "conformanceReceiptSha256": "5" * 64,
-            "compatibilityContractSha256": canonical_json_sha256(cast(JsonValue, compatibility)),
+            "compatibilityContractSha256": rfc8785_json_sha256_v1(cast(JsonValue, compatibility)),
         },
         "license": {
             "expression": "Apache-2.0",
@@ -170,7 +170,7 @@ def _signed_manifest(unsigned: dict[str, object]) -> dict[str, object]:
         "family": cast(str, manifest["family"]),
         "publisherId": cast(str, publisher["publisherId"]),
         "channel": cast(str, manifest["channel"]),
-        "manifestSha256": canonical_json_sha256(cast(JsonValue, manifest)),
+        "manifestSha256": rfc8785_json_sha256_v1(cast(JsonValue, manifest)),
         "archiveSha256": cast(str, digests["archiveSha256"]),
         "payloadTreeSha256": cast(str, digests["payloadTreeSha256"]),
         "sbomSha256": cast(str, digests["sbomSha256"]),
@@ -178,7 +178,7 @@ def _signed_manifest(unsigned: dict[str, object]) -> dict[str, object]:
         "conformanceReceiptSha256": cast(str, digests["conformanceReceiptSha256"]),
         "compatibilityContractSha256": cast(str, digests["compatibilityContractSha256"]),
     }
-    signature = signing_key.sign(DOMAIN + canonical_json_bytes(cast(JsonValue, envelope)))
+    signature = signing_key.sign(DOMAIN + rfc8785_json_bytes_v1(cast(JsonValue, envelope)))
     manifest["signature"] = {
         "schemaVersion": 1,
         "kind": "sangrepPackSignature",
@@ -298,7 +298,7 @@ def _trust_root(
         "publisherId": "sangrep",
         "channels": ["development"],
         "custodyClass": custody_class,
-        "receiptDigest": f"sha256:{canonical_json_sha256(cast(JsonValue, receipt))}",
+        "receiptDigest": f"sha256:{rfc8785_json_sha256_v1(cast(JsonValue, receipt))}",
         "validFrom": valid_from,
         "validUntil": valid_until,
     }
@@ -317,6 +317,10 @@ def _trust_roots(public_key: bytes, key_id: str) -> dict[str, object]:
 
 def _manifest_vectors() -> dict[str, object]:
     parser = _parser_manifest()
+    non_nfc_unsigned = _unsigned_parser_manifest()
+    non_nfc_limitations = cast(list[str], non_nfc_unsigned["limitations"])
+    non_nfc_limitations[0] = "Synthetic cafe\u0301 limitation."
+    non_nfc_parser = _signed_manifest(non_nfc_unsigned)
     intelligence = _intelligence_manifest(declare_remote_permissions=True)
     catalog = _catalog(cyclic=False)
     actual_digests = {
@@ -328,20 +332,94 @@ def _manifest_vectors() -> dict[str, object]:
     }
     unknown = copy.deepcopy(parser)
     unknown["unexpected"] = True
+    parent_notice = copy.deepcopy(parser)
+    cast(dict[str, object], parent_notice["license"])["noticePath"] = "../NOTICE"
+    dot_license = copy.deepcopy(parser)
+    cast(dict[str, object], dot_license["license"])["licensePaths"] = ["."]
     undeclared = _intelligence_manifest(declare_remote_permissions=False)
+    optional_remote = _intelligence_manifest(declare_remote_permissions=True)
+    optional_remote_unsigned = {
+        key: value for key, value in optional_remote.items() if key != "signature"
+    }
+    optional_remote_grants = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], optional_remote_unsigned["permissions"])["grants"],
+    )
+    for grant in optional_remote_grants:
+        if grant["permission"] in {"network.connect", "provider.invoke"}:
+            grant["required"] = False
+    optional_remote = _signed_manifest(optional_remote_unsigned)
+    optional_parser_unsigned = _unsigned_parser_manifest()
+    optional_parser_grants = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], optional_parser_unsigned["permissions"])["grants"],
+    )
+    optional_parser_grants[0]["required"] = False
+    optional_parser = _signed_manifest(optional_parser_unsigned)
+    local_network_unsigned = _unsigned_parser_manifest()
+    local_network_grants = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], local_network_unsigned["permissions"])["grants"],
+    )
+    local_network_grants.append(
+        {
+            "permission": "network.connect",
+            "required": True,
+            "reason": "Contradictory local network grant.",
+        }
+    )
+    local_network = _signed_manifest(local_network_unsigned)
+    remote_profile = _intelligence_manifest(declare_remote_permissions=True)
+    remote_profile_unsigned = {
+        key: value for key, value in remote_profile.items() if key != "signature"
+    }
+    cast(dict[str, object], remote_profile_unsigned["execution"])["isolationProfile"] = (
+        "processSandboxV1"
+    )
+    remote_profile = _signed_manifest(remote_profile_unsigned)
+    overlapping_platform_unsigned = _unsigned_parser_manifest()
+    overlapping_platforms = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], overlapping_platform_unsigned["compatibility"])["operatingSystems"],
+    )
+    overlapping_platforms.append(
+        {
+            "name": "macos",
+            "architectures": ["arm64"],
+            "minimumInclusive": "14.0.0",
+            "maximumExclusive": "16.0.0",
+        }
+    )
+    overlapping_digests = cast(dict[str, object], overlapping_platform_unsigned["digests"])
+    overlapping_digests["compatibilityContractSha256"] = rfc8785_json_sha256_v1(
+        cast(JsonValue, overlapping_platform_unsigned["compatibility"])
+    )
+    overlapping_order_a = _signed_manifest(overlapping_platform_unsigned)
+    overlapping_platforms.reverse()
+    overlapping_digests["compatibilityContractSha256"] = rfc8785_json_sha256_v1(
+        cast(JsonValue, overlapping_platform_unsigned["compatibility"])
+    )
+    overlapping_order_b = _signed_manifest(overlapping_platform_unsigned)
     absent_sbom = copy.deepcopy(parser)
     del cast(dict[str, object], absent_sbom["digests"])["sbomSha256"]
     absent_license = copy.deepcopy(parser)
     del absent_license["license"]
     publisher_mismatch = copy.deepcopy(parser)
     cast(dict[str, object], publisher_mismatch["publisher"])["publisherId"] = "other"
+    oversized_version = copy.deepcopy(parser)
+    oversized_version["version"] = f"{'9' * 129}.0.0"
     positives = [
         {"name": "development-parser-pack", "contract": "manifest", "value": parser},
+        {
+            "name": "development-parser-pack-non-nfc",
+            "contract": "manifest",
+            "value": non_nfc_parser,
+        },
         {"name": "remote-intelligence-pack", "contract": "manifest", "value": intelligence},
         {"name": "development-catalog", "contract": "catalog", "value": catalog},
     ]
     for case in positives:
-        case["canonicalSha256"] = canonical_json_sha256(cast(JsonValue, case["value"]))
+        case["canonicalSha256"] = rfc8785_json_sha256_v1(cast(JsonValue, case["value"]))
     return {
         "schemaVersion": 1,
         "kind": "sangrepPackManifestVectors",
@@ -351,6 +429,16 @@ def _manifest_vectors() -> dict[str, object]:
                 "name": "unknown-field",
                 "operation": "schema-manifest",
                 "value": unknown,
+            },
+            {
+                "name": "parent-segment-notice-path",
+                "operation": "schema-manifest",
+                "value": parent_notice,
+            },
+            {
+                "name": "dot-segment-license-path",
+                "operation": "schema-manifest",
+                "value": dot_license,
             },
             {
                 "name": "wrong-archive-digest",
@@ -376,6 +464,36 @@ def _manifest_vectors() -> dict[str, object]:
                 "value": undeclared,
             },
             {
+                "name": "optional-remote-permissions",
+                "operation": "schema-manifest",
+                "value": optional_remote,
+            },
+            {
+                "name": "optional-parser-source-read",
+                "operation": "schema-manifest",
+                "value": optional_parser,
+            },
+            {
+                "name": "local-network-permission",
+                "operation": "schema-manifest",
+                "value": local_network,
+            },
+            {
+                "name": "remote-isolation-profile-mismatch",
+                "operation": "schema-manifest",
+                "value": remote_profile,
+            },
+            {
+                "name": "overlapping-platform-range-order-a",
+                "operation": "manifest-runtime",
+                "value": overlapping_order_a,
+            },
+            {
+                "name": "overlapping-platform-range-order-b",
+                "operation": "manifest-runtime",
+                "value": overlapping_order_b,
+            },
+            {
                 "name": "dependency-cycle",
                 "operation": "catalog-dependencies",
                 "value": _catalog(cyclic=True),
@@ -394,6 +512,11 @@ def _manifest_vectors() -> dict[str, object]:
                 "name": "publisher-identity-mismatch",
                 "operation": "manifest-runtime",
                 "value": publisher_mismatch,
+            },
+            {
+                "name": "oversized-semantic-version",
+                "operation": "schema-manifest",
+                "value": oversized_version,
             },
         ],
     }
@@ -416,6 +539,14 @@ def _signing_vectors() -> dict[str, object]:
             ).decode("ascii"),
         }
     ]
+    oversized_integer = b'{"schemaVersion":' + (b"9" * 5000) + b"}"
+    negative_cases.append(
+        {
+            "name": "oversized-envelope-integer",
+            "operation": "canonical-envelope-bytes",
+            "bytesBase64": base64.b64encode(oversized_integer).decode("ascii"),
+        }
+    )
     noncanonical_base64 = copy.deepcopy(signature)
     noncanonical_base64["signatureBase64"] = signature_text.rstrip("=")
     negative_cases.append(
@@ -483,6 +614,18 @@ def _signing_vectors() -> dict[str, object]:
                 "buildProfile": profile,
             }
         )
+    authority_expansion = copy.deepcopy(roots)
+    authority_expansion["trustPolicyVersion"] = 2
+    expanded_root = cast(dict[str, object], cast(list[object], authority_expansion["roots"])[0])
+    expanded_root["channels"] = ["release"]
+    negative_cases.append(
+        {
+            "name": "successor-authority-expansion",
+            "operation": "trust-successor",
+            "previousTrustRoots": roots,
+            "currentTrustRoots": authority_expansion,
+        }
+    )
     second_signing_key = Ed25519PrivateKey.from_private_bytes(
         hashlib.sha256(b"synthetic sangrep pack rotation vector v1").digest()
     )
@@ -533,7 +676,7 @@ def _signing_vectors() -> dict[str, object]:
                 "manifest": manifest,
                 "trustRoots": roots,
                 "keyId": key_id,
-                "unsignedEnvelopeSha256": canonical_json_sha256(cast(JsonValue, envelope)),
+                "unsignedEnvelopeSha256": rfc8785_json_sha256_v1(cast(JsonValue, envelope)),
             }
         ],
         "negativeCases": negative_cases,

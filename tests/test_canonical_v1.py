@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from sangrep_contracts import (
@@ -7,6 +9,8 @@ from sangrep_contracts import (
     canonical_json_bytes,
     canonical_json_sha256,
     require_sha256,
+    rfc8785_json_bytes_v1,
+    rfc8785_json_sha256_v1,
 )
 
 
@@ -38,6 +42,14 @@ def test_canonical_json_rejects_non_nfc_and_excessive_depth() -> None:
         nested = [nested]
     with pytest.raises(ContractValidationError, match="depth"):
         canonical_json_bytes(nested)  # type: ignore[arg-type]
+
+
+def test_rfc8785_profile_preserves_non_nfc_unicode_without_normalization() -> None:
+    value = {"value": "e\u0301"}
+    expected = b'{"value":"e\xcc\x81"}'
+
+    assert rfc8785_json_bytes_v1(value) == expected
+    assert rfc8785_json_sha256_v1(value) == hashlib.sha256(expected).hexdigest()
 
 
 def test_canonical_json_rejects_oversized_strings_keys_and_aggregate_text() -> None:

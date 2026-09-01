@@ -6,7 +6,7 @@ import hashlib
 import json
 import unicodedata
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import TypeAlias, cast
 
 JsonScalar: TypeAlias = None | bool | int | str
 JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
@@ -26,6 +26,16 @@ class ContractValidationError(ValueError):
 
 JsonObjectValue: TypeAlias = dict[str, JsonValue]
 FrozenJsonScalarV1: TypeAlias = None | bool | int | str
+
+
+@dataclass(frozen=True, slots=True)
+class Rfc8785JsonObjectV1:
+    canonical_bytes: bytes
+
+    def __post_init__(self) -> None:
+        if type(self.canonical_bytes) is not bytes:
+            raise ContractValidationError("RFC 8785 JSON object bytes must be immutable bytes.")
+        rfc8785_json_object_from_bytes_v1(self.canonical_bytes)
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,6 +242,177 @@ def canonical_json_sha256(value: JsonValue) -> str:
     """Return lowercase SHA-256 for exact canonical JSON bytes."""
 
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+
+
+def _require_preserved_unicode(
+    value: str,
+    *,
+    field_name: str,
+    maximum_bytes: int,
+) -> tuple[str, int]:
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ContractValidationError(f"{field_name} contains an unpaired surrogate.") from error
+    if len(encoded) > maximum_bytes:
+        raise ContractValidationError(f"{field_name} exceeds its byte limit.")
+    return value, len(encoded)
+
+
+def _normalize_rfc8785_v1(
+    value: JsonValue,
+    *,
+    depth: int,
+    count: list[int],
+    text_bytes: list[int],
+) -> JsonValue:
+    if depth > MAX_CANONICAL_DEPTH:
+        raise ContractValidationError("RFC 8785 JSON exceeds the maximum depth.")
+    count[0] += 1
+    if count[0] > MAX_CANONICAL_VALUES:
+        raise ContractValidationError("RFC 8785 JSON exceeds the maximum value count.")
+    if value is None or type(value) is bool:
+        return value
+    if type(value) is int:
+        if abs(value) > MAX_SAFE_INTEGER:
+            raise ContractValidationError("RFC 8785 JSON integer is outside the I-JSON range.")
+        return value
+    if type(value) is str:
+        clean, size = _require_preserved_unicode(
+            value,
+            field_name="RFC 8785 JSON string",
+            maximum_bytes=MAX_STRING_BYTES,
+        )
+        _add_text_bytes(text_bytes, size)
+        return clean
+    if type(value) is list:
+        return [
+            _normalize_rfc8785_v1(
+                item,
+                depth=depth + 1,
+                count=count,
+                text_bytes=text_bytes,
+            )
+            for item in value
+        ]
+    if type(value) is dict:
+        if any(type(key) is not str for key in value):
+            raise ContractValidationError("RFC 8785 JSON object keys must be strings.")
+        clean_keys: list[str] = []
+        for key in value:
+            clean_key, size = _require_preserved_unicode(
+                key,
+                field_name="RFC 8785 JSON object key",
+                maximum_bytes=MAX_KEY_BYTES,
+            )
+            _add_text_bytes(text_bytes, size)
+            clean_keys.append(clean_key)
+        return {
+            key: _normalize_rfc8785_v1(
+                value[key],
+                depth=depth + 1,
+                count=count,
+                text_bytes=text_bytes,
+            )
+            for key in sorted(clean_keys, key=_utf16_key)
+        }
+    raise ContractValidationError(f"Unsupported RFC 8785 JSON type: {type(value).__name__}.")
+
+
+def rfc8785_json_bytes_v1(value: JsonValue) -> bytes:
+    """Serialize the bounded integer-only I-JSON subset using RFC 8785 rules."""
+
+    normalized = _normalize_rfc8785_v1(value, depth=0, count=[0], text_bytes=[0])
+    serialized = json.dumps(
+        normalized,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    if len(serialized) > MAX_CANONICAL_BYTES:
+        raise ContractValidationError("RFC 8785 JSON exceeds the serialized byte limit.")
+    return serialized
+
+
+def rfc8785_json_sha256_v1(value: JsonValue) -> str:
+    return hashlib.sha256(rfc8785_json_bytes_v1(value)).hexdigest()
+
+
+def rfc8785_json_sha256_omitting_field_v1(
+    value: JsonObjectValue,
+    *,
+    field_name: str,
+) -> str:
+    if type(value) is not dict:
+        raise ContractValidationError("RFC 8785 digest input must be a JSON object.")
+    if field_name not in value:
+        raise ContractValidationError(f"{field_name} must be present before digest omission.")
+    omitted = dict(value)
+    del omitted[field_name]
+    return rfc8785_json_sha256_v1(omitted)
+
+
+def _load_bounded_json_v1(data: bytes) -> JsonValue:
+    if type(data) is not bytes:
+        raise ContractValidationError("RFC 8785 JSON input must be immutable bytes.")
+    if len(data) > MAX_CANONICAL_BYTES:
+        raise ContractValidationError("RFC 8785 JSON exceeds the serialized byte limit.")
+
+    def parse_integer(raw: str) -> int:
+        if len(raw.lstrip("-")) > 16:
+            raise ContractValidationError("RFC 8785 JSON integer is outside the I-JSON range.")
+        try:
+            value = int(raw)
+        except ValueError as error:
+            raise ContractValidationError("RFC 8785 JSON integer is malformed.") from error
+        if abs(value) > MAX_SAFE_INTEGER:
+            raise ContractValidationError("RFC 8785 JSON integer is outside the I-JSON range.")
+        return value
+
+    def reject_constant(value: str) -> None:
+        raise ContractValidationError(f"non-finite JSON constant is forbidden: {value}.")
+
+    def object_without_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, item in pairs:
+            if key in result:
+                raise ContractValidationError("RFC 8785 JSON contains a duplicate object key.")
+            result[key] = item
+        return result
+
+    try:
+        value = json.loads(
+            data.decode("utf-8"),
+            parse_int=parse_integer,
+            parse_constant=reject_constant,
+            object_pairs_hook=object_without_duplicates,
+        )
+    except ContractValidationError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as error:
+        raise ContractValidationError("RFC 8785 JSON input is malformed.") from error
+    return cast(JsonValue, value)
+
+
+def rfc8785_json_object_from_bytes_v1(data: bytes) -> JsonObjectValue:
+    value = _load_bounded_json_v1(data)
+    if type(value) is not dict:
+        raise ContractValidationError("RFC 8785 JSON value must be an object.")
+    if rfc8785_json_bytes_v1(value) != data:
+        raise ContractValidationError("JSON bytes must use canonical RFC 8785 encoding.")
+    return value
+
+
+def freeze_rfc8785_json_object_v1(value: JsonObjectValue) -> Rfc8785JsonObjectV1:
+    if type(value) is not dict:
+        raise ContractValidationError("RFC 8785 JSON value must be an object.")
+    return Rfc8785JsonObjectV1(rfc8785_json_bytes_v1(value))
+
+
+def thaw_rfc8785_json_object_v1(value: Rfc8785JsonObjectV1) -> JsonObjectValue:
+    if type(value) is not Rfc8785JsonObjectV1:
+        raise ContractValidationError("RFC 8785 frozen JSON object is malformed.")
+    return rfc8785_json_object_from_bytes_v1(value.canonical_bytes)
 
 
 def require_sha256(value: str, *, field_name: str) -> str:

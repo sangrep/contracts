@@ -75,6 +75,31 @@ def _blocked() -> FilesystemInventoryEntryV1:
     )
 
 
+def _directory(
+    *,
+    entry_id: str = "entry:folder",
+    parent_entry_id: str = "entry:root",
+    relative_path: str = "folder",
+    ordinal: int = 0,
+    status: FilesystemEntryStatusV1 = FilesystemEntryStatusV1.ADMITTED,
+) -> FilesystemInventoryEntryV1:
+    return FilesystemInventoryEntryV1(
+        entry_id=entry_id,
+        parent_entry_id=parent_entry_id,
+        entry_kind=FilesystemEntryKindV1.DIRECTORY,
+        status=status,
+        relative_path=relative_path,
+        ordinal=ordinal,
+        byte_size=None,
+        content_sha256=None,
+        media_type=None,
+        encoding_profile=TextEncodingProfileV1.UTF8,
+        newline_profile=NewlineProfileV1.LF,
+        source_version_id=None,
+        warning_codes=("blocked-directory",) if status is FilesystemEntryStatusV1.BLOCKED else (),
+    )
+
+
 def _snapshot(*entries: FilesystemInventoryEntryV1) -> FilesystemSnapshotV1:
     snapshot_entries = entries or (_root(), _file(), _blocked())
     snapshot_sha256 = canonical_json_sha256_omitting_field_v1(
@@ -135,7 +160,7 @@ def test_filesystem_snapshot_validates_root_order_preorder_and_duplicate_content
         source_version_id="source:policy-copy:v1",
         content_sha256="1" * 64,
         ordinal=2,
-        relative_path="copy/policy.md",
+        relative_path="policy-copy.md",
     )
     snapshot = _snapshot(_root(), _file(), _blocked(), duplicate_content)
 
@@ -171,6 +196,44 @@ def test_filesystem_snapshot_rejects_entry_subclasses_before_serialization() -> 
 
     with pytest.raises(ContractValidationError, match="inventory_entries"):
         replace(snapshot, inventory_entries=entries)
+
+
+def test_filesystem_snapshot_requires_admitted_directory_and_path_consistent_parents() -> None:
+    file_parent = _file()
+    child_of_file = replace(
+        _file(
+            entry_id="entry:child",
+            source_version_id="source:child:v1",
+            content_sha256="3" * 64,
+            relative_path="policy.md/child.md",
+        ),
+        parent_entry_id=file_parent.entry_id,
+    )
+    with pytest.raises(ContractValidationError, match="parent must be an admitted directory"):
+        _snapshot(_root(), file_parent, child_of_file)
+
+    directory = _directory()
+    unrelated_child = replace(
+        _file(relative_path="other/policy.md"),
+        parent_entry_id=directory.entry_id,
+    )
+    with pytest.raises(ContractValidationError, match="direct path descendant"):
+        _snapshot(_root(), directory, unrelated_child)
+
+    blocked_directory = _directory(status=FilesystemEntryStatusV1.BLOCKED)
+    blocked_child = replace(
+        _file(relative_path="folder/policy.md"),
+        parent_entry_id=blocked_directory.entry_id,
+    )
+    with pytest.raises(ContractValidationError, match="parent must be an admitted directory"):
+        _snapshot(_root(), blocked_directory, blocked_child)
+
+    valid_child = replace(
+        _file(relative_path="folder/policy.md"),
+        parent_entry_id=directory.entry_id,
+    )
+    snapshot = _snapshot(_root(), directory, valid_child)
+    assert FilesystemSnapshotV1.from_json_obj(snapshot.to_json_obj()) == snapshot
 
 
 def test_filesystem_entries_are_frozen_slotted_and_return_fresh_wire_lists() -> None:

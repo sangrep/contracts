@@ -22,6 +22,7 @@
     },
     "SemanticVersionV1": {
       "type": "string",
+      "maxLength": 128,
       "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
     },
     "HttpsUriV1": {
@@ -30,7 +31,9 @@
     },
     "RelativePathV1": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
     },
     "VersionRangeV1": {
       "type": "object",
@@ -220,7 +223,57 @@
             "$ref": "#/$defs/PackEntrypointV1"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "local"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "isolationProfile": {
+                "const": "processSandboxV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "isolationProfile": {
+                "const": "remoteServiceV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "hybrid"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "isolationProfile": {
+                "const": "hybridProcessV1"
+              }
+            }
+          }
+        }
+      ]
     },
     "PackPermissionGrantV1": {
       "type": "object",
@@ -745,6 +798,26 @@
                     "const": "local"
                   }
                 }
+              },
+              "permissions": {
+                "properties": {
+                  "grants": {
+                    "contains": {
+                      "properties": {
+                        "permission": {
+                          "const": "source.read"
+                        },
+                        "required": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "permission",
+                        "required"
+                      ]
+                    }
+                  }
+                }
               }
             }
           },
@@ -791,10 +864,14 @@
                           "properties": {
                             "permission": {
                               "const": "network.connect"
+                            },
+                            "required": {
+                              "const": true
                             }
                           },
                           "required": [
-                            "permission"
+                            "permission",
+                            "required"
                           ]
                         }
                       },
@@ -803,14 +880,62 @@
                           "properties": {
                             "permission": {
                               "const": "provider.invoke"
+                            },
+                            "required": {
+                              "const": true
                             }
                           },
                           "required": [
-                            "permission"
+                            "permission",
+                            "required"
                           ]
                         }
                       }
                     ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "mode": {
+                    "const": "local"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "permissions": {
+                "properties": {
+                  "network": {
+                    "const": null
+                  },
+                  "provider": {
+                    "const": null
+                  },
+                  "grants": {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "permission": {
+                            "enum": [
+                              "network.connect",
+                              "provider.invoke"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "permission"
+                        ]
+                      }
+                    }
                   }
                 }
               }

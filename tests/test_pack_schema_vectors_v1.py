@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from sangrep_contracts import ContractValidationError, JsonValue, canonical_json_sha256
+from sangrep_contracts import ContractValidationError, JsonValue, rfc8785_json_sha256_v1
 from sangrep_contracts.pack import (
     SangrepPackCatalogV1,
     SangrepPackManifestV1,
@@ -28,6 +28,7 @@ from sangrep_contracts.pack_signing import (
     pack_signature_message_v1,
     unsigned_envelope_from_canonical_json_bytes_v1,
     verify_pack_signature_v1,
+    verify_trust_policy_successor_v1,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +89,7 @@ def test_pack_schemas_are_draft_2020_12_and_positive_vectors_conform() -> None:
     assert isinstance(positive_cases, list)
     assert {case["name"] for case in positive_cases} == {
         "development-parser-pack",
+        "development-parser-pack-non-nfc",
         "remote-intelligence-pack",
         "development-catalog",
     }
@@ -105,7 +107,7 @@ def test_pack_schemas_are_draft_2020_12_and_positive_vectors_conform() -> None:
             verify_catalog_dependency_graph_v1(catalog)
         else:
             raise AssertionError(f"unknown positive contract: {contract}")
-        assert canonical_json_sha256(cast(JsonValue, value)) == case["canonicalSha256"]
+        assert rfc8785_json_sha256_v1(cast(JsonValue, value)) == case["canonicalSha256"]
 
 
 def test_manifest_malicious_vectors_cover_required_rejections() -> None:
@@ -116,11 +118,20 @@ def test_manifest_malicious_vectors_cover_required_rejections() -> None:
         "unknown-field",
         "wrong-archive-digest",
         "incompatible-application-version",
+        "local-network-permission",
+        "optional-parser-source-read",
+        "optional-remote-permissions",
+        "overlapping-platform-range-order-a",
+        "overlapping-platform-range-order-b",
+        "oversized-semantic-version",
         "undeclared-network-permissions",
         "dependency-cycle",
+        "dot-segment-license-path",
         "absent-sbom",
         "absent-license",
+        "parent-segment-notice-path",
         "publisher-identity-mismatch",
+        "remote-isolation-profile-mismatch",
     }
 
     for case in cases:
@@ -214,7 +225,7 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
     signature_payload = manifest.to_json_obj()["signature"]
     signature = SangrepPackSignatureV1.from_json_obj(signature_payload)
     assert (
-        canonical_json_sha256(cast(JsonValue, signature.unsigned_envelope.to_json_obj()))
+        rfc8785_json_sha256_v1(cast(JsonValue, signature.unsigned_envelope.to_json_obj()))
         == positive["unsignedEnvelopeSha256"]
     )
 
@@ -222,6 +233,7 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
     assert isinstance(negative_cases, list)
     assert {case["name"] for case in negative_cases} == {
         "noncanonical-json",
+        "oversized-envelope-integer",
         "noncanonical-base64",
         "digest-change-manifest",
         "digest-change-archive",
@@ -236,6 +248,7 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         "unknown-root",
         "revoked-key",
         "rollback-revoked-artifact",
+        "successor-authority-expansion",
         "unbounded-rotation",
     }
     for case in negative_cases:
@@ -269,5 +282,10 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         elif operation == "trust-registry":
             with pytest.raises(ContractValidationError):
                 SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
+        elif operation == "trust-successor":
+            previous = SangrepPackTrustRootsV1.from_json_obj(case["previousTrustRoots"])
+            current = SangrepPackTrustRootsV1.from_json_obj(case["currentTrustRoots"])
+            with pytest.raises(ContractValidationError):
+                verify_trust_policy_successor_v1(previous, current)
         else:
             raise AssertionError(f"unknown signing operation: {operation}")

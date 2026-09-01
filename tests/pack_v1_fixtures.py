@@ -164,6 +164,11 @@ def intelligence_manifest_json(*, mode: str = "remote") -> dict[str, object]:
     execution = manifest["execution"]
     assert isinstance(execution, dict)
     execution["mode"] = mode
+    execution["isolationProfile"] = {
+        "local": "processSandboxV1",
+        "remote": "remoteServiceV1",
+        "hybrid": "hybridProcessV1",
+    }[mode]
     manifest["payload"] = {
         "schemaVersion": 1,
         "kind": "intelligencePack",

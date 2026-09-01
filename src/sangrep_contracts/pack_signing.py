@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -13,12 +12,13 @@ from typing import Self, cast
 
 from .canonical import (
     ContractValidationError,
-    FrozenJsonObjectV1,
     JsonObjectValue,
     JsonValue,
-    canonical_json_bytes,
-    canonical_json_sha256,
-    thaw_json_object_v1,
+    Rfc8785JsonObjectV1,
+    rfc8785_json_bytes_v1,
+    rfc8785_json_object_from_bytes_v1,
+    rfc8785_json_sha256_v1,
+    thaw_rfc8785_json_object_v1,
 )
 from .pack import (
     PackChannelV1,
@@ -68,7 +68,7 @@ class SangrepPackUnsignedEnvelopeV1:
     license_bundle_sha256: str
     conformance_receipt_sha256: str
     compatibility_contract_sha256: str
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -117,7 +117,7 @@ class SangrepPackUnsignedEnvelopeV1:
         )
 
     def to_json_obj(self) -> JsonObjectValue:
-        return thaw_json_object_v1(self.wire)
+        return thaw_rfc8785_json_object_v1(self.wire)
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,7 +127,7 @@ class SangrepPackSignatureV1:
     key_id: str
     unsigned_envelope: SangrepPackUnsignedEnvelopeV1
     signature: bytes
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -161,7 +161,7 @@ class SangrepPackSignatureV1:
         )
 
     def to_json_obj(self) -> JsonObjectValue:
-        return thaw_json_object_v1(self.wire)
+        return thaw_rfc8785_json_object_v1(self.wire)
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,7 +198,7 @@ class SangrepPackTrustRootsV1:
     roots: tuple[PackTrustRootV1, ...]
     rotations: tuple[PackRotationV1, ...]
     revocations: tuple[PackRevocationV1, ...]
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -248,7 +248,7 @@ class SangrepPackTrustRootsV1:
         return cls(policy_version, roots, rotations, revocations, _freeze(payload))
 
     def to_json_obj(self) -> JsonObjectValue:
-        return thaw_json_object_v1(self.wire)
+        return thaw_rfc8785_json_object_v1(self.wire)
 
 
 def ed25519_key_id_v1(public_key: bytes) -> str:
@@ -258,38 +258,13 @@ def ed25519_key_id_v1(public_key: bytes) -> str:
 
 
 def pack_signature_message_v1(envelope: SangrepPackUnsignedEnvelopeV1) -> bytes:
-    return PACK_SIGNATURE_DOMAIN_V1 + canonical_json_bytes(cast(JsonValue, envelope.to_json_obj()))
+    return PACK_SIGNATURE_DOMAIN_V1 + rfc8785_json_bytes_v1(cast(JsonValue, envelope.to_json_obj()))
 
 
 def unsigned_envelope_from_canonical_json_bytes_v1(
     data: bytes,
 ) -> SangrepPackUnsignedEnvelopeV1:
-    if type(data) is not bytes:
-        raise ContractValidationError("unsigned envelope bytes must be bytes.")
-
-    def reject_constant(value: str) -> None:
-        raise ContractValidationError(f"non-finite JSON constant is forbidden: {value}.")
-
-    def object_without_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
-        result: dict[str, object] = {}
-        for key, item in pairs:
-            if key in result:
-                raise ContractValidationError("unsigned envelope contains a duplicate JSON key.")
-            result[key] = item
-        return result
-
-    try:
-        value = json.loads(
-            data.decode("utf-8"),
-            parse_constant=reject_constant,
-            object_pairs_hook=object_without_duplicates,
-        )
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ContractValidationError("unsigned envelope is not strict UTF-8 JSON.") from error
-    envelope = SangrepPackUnsignedEnvelopeV1.from_json_obj(value)
-    if canonical_json_bytes(cast(JsonValue, envelope.to_json_obj())) != data:
-        raise ContractValidationError("unsigned envelope bytes must use canonical RFC 8785 JSON.")
-    return envelope
+    return SangrepPackUnsignedEnvelopeV1.from_json_obj(rfc8785_json_object_from_bytes_v1(data))
 
 
 def verify_pack_signature_v1(
@@ -331,14 +306,65 @@ def verify_trust_policy_successor_v1(
 ) -> None:
     if current.trust_policy_version != previous.trust_policy_version + 1:
         raise ContractValidationError("trustPolicyVersion must increase by exactly one.")
-    previous_ids = {root.key_id for root in previous.roots}
-    current_ids = {root.key_id for root in current.roots}
-    current_revoked = {item.key_id for item in current.revocations}
-    if not previous_ids <= current_ids | current_revoked:
+    previous_by_id = {root.key_id: root for root in previous.roots}
+    current_by_id = {root.key_id: root for root in current.roots}
+    previous_ids = set(previous_by_id)
+    current_ids = set(current_by_id)
+    if not previous_ids <= current_ids:
         raise ContractValidationError("a trust root disappeared without revocation.")
-    previous_revoked = {item.key_id for item in previous.revocations}
-    if not previous_revoked <= current_revoked:
-        raise ContractValidationError("a revoked key cannot return to trust.")
+    rotations_by_from = {rotation.from_key_id: rotation for rotation in current.rotations}
+    for key_id, previous_root in previous_by_id.items():
+        current_root = current_by_id[key_id]
+        immutable_authority = (
+            previous_root.public_key,
+            previous_root.role,
+            previous_root.publisher_id,
+            frozenset(previous_root.channels),
+            previous_root.custody_class,
+            previous_root.receipt_digest,
+            previous_root.valid_from,
+        )
+        current_authority = (
+            current_root.public_key,
+            current_root.role,
+            current_root.publisher_id,
+            frozenset(current_root.channels),
+            current_root.custody_class,
+            current_root.receipt_digest,
+            current_root.valid_from,
+        )
+        if current_authority != immutable_authority:
+            raise ContractValidationError("existing trust-root authority cannot change.")
+        if current_root.valid_until != previous_root.valid_until:
+            rotation = rotations_by_from.get(key_id)
+            if rotation is None or current_root.valid_until != rotation.overlap_ends_at:
+                raise ContractValidationError("existing trust-root authority cannot change.")
+            if (
+                previous_root.valid_until is not None
+                and current_root.valid_until is not None
+                and current_root.valid_until > previous_root.valid_until
+            ):
+                raise ContractValidationError("existing trust-root validity cannot be extended.")
+    rotated_new_ids = {
+        rotation.to_key_id for rotation in current.rotations if rotation.from_key_id in previous_ids
+    }
+    if not current_ids - previous_ids <= rotated_new_ids:
+        raise ContractValidationError("new trust roots require a bounded rotation.")
+    previous_rotations = {
+        (rotation.from_key_id, rotation.to_key_id): rotation for rotation in previous.rotations
+    }
+    current_rotations = {
+        (rotation.from_key_id, rotation.to_key_id): rotation for rotation in current.rotations
+    }
+    if any(
+        current_rotations.get(pair) != rotation for pair, rotation in previous_rotations.items()
+    ):
+        raise ContractValidationError("existing trust-root rotations cannot change.")
+    previous_revocations = {item.key_id: item for item in previous.revocations}
+    current_revocations = {item.key_id: item for item in current.revocations}
+    for key_id, revocation in previous_revocations.items():
+        if current_revocations.get(key_id) != revocation:
+            raise ContractValidationError("a revoked key cannot return to trust.")
 
 
 def _parse_root(value: object, *, field_name: str) -> PackTrustRootV1:
@@ -385,7 +411,7 @@ def _parse_root(value: object, *, field_name: str) -> PackTrustRootV1:
         "keyId": key_id,
         "custodyClass": custody_class,
     }
-    expected_digest = f"sha256:{canonical_json_sha256(cast(JsonValue, expected_receipt))}"
+    expected_digest = f"sha256:{rfc8785_json_sha256_v1(cast(JsonValue, expected_receipt))}"
     if receipt_digest != expected_digest:
         raise ContractValidationError(f"{field_name}.receiptDigest is invalid.")
     valid_from = _parse_optional_time(payload["validFrom"], field_name=f"{field_name}.validFrom")

@@ -12,15 +12,16 @@ from typing import Self, TypeVar, cast
 from .canonical import (
     MAX_SAFE_INTEGER,
     ContractValidationError,
-    FrozenJsonObjectV1,
     JsonObjectValue,
     JsonValue,
-    canonical_json_sha256,
-    canonical_json_sha256_omitting_field_v1,
-    freeze_json_object_v1,
+    Rfc8785JsonObjectV1,
+    freeze_rfc8785_json_object_v1,
     require_sha256,
-    thaw_json_object_v1,
+    rfc8785_json_sha256_omitting_field_v1,
+    rfc8785_json_sha256_v1,
+    thaw_rfc8785_json_object_v1,
 )
+from .filesystem import require_safe_relative_path_label_v1
 
 _PACK_ID = re.compile(r"[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\Z")
 _CODE = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*\Z")
@@ -33,6 +34,7 @@ _SEMVER = re.compile(
 _KEY_ID = re.compile(r"ed25519-sha256:[0-9a-f]{64}\Z")
 _RELATIVE_PATH = re.compile(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\Z")
 _HOST = re.compile(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?\Z")
+MAX_SEMANTIC_VERSION_BYTES = 128
 EnumType = TypeVar("EnumType", bound=Enum)
 
 
@@ -69,9 +71,25 @@ class SemanticVersionV1:
     @classmethod
     def parse(cls, value: object, *, field_name: str) -> Self:
         text = _require_string(value, field_name=field_name)
+        if len(text.encode("utf-8")) > MAX_SEMANTIC_VERSION_BYTES:
+            raise ContractValidationError(f"{field_name} must be a bounded semantic version.")
         match = _SEMVER.fullmatch(text)
         if match is None:
             raise ContractValidationError(f"{field_name} must be a semantic version.")
+
+        def parse_numeric(identifier: str) -> int:
+            if len(identifier) > 16:
+                raise ContractValidationError(f"{field_name} must be a bounded semantic version.")
+            try:
+                parsed = int(identifier)
+            except ValueError as error:
+                raise ContractValidationError(
+                    f"{field_name} must be a semantic version."
+                ) from error
+            if parsed > MAX_SAFE_INTEGER:
+                raise ContractValidationError(f"{field_name} must be a bounded semantic version.")
+            return parsed
+
         raw_prerelease = match.group(4)
         prerelease: list[int | str] = []
         if raw_prerelease is not None:
@@ -81,10 +99,15 @@ class SemanticVersionV1:
                         raise ContractValidationError(
                             f"{field_name} has a numeric prerelease identifier with a leading zero."
                         )
-                    prerelease.append(int(identifier))
+                    prerelease.append(parse_numeric(identifier))
                 else:
                     prerelease.append(identifier)
-        return cls(int(match.group(1)), int(match.group(2)), int(match.group(3)), tuple(prerelease))
+        return cls(
+            parse_numeric(match.group(1)),
+            parse_numeric(match.group(2)),
+            parse_numeric(match.group(3)),
+            tuple(prerelease),
+        )
 
     def _precedence_key(self) -> tuple[object, ...]:
         if not self.prerelease:
@@ -140,7 +163,7 @@ class PackCompatibilityV1:
     application: VersionRangeV1
     operating_systems: tuple[OperatingSystemRangeV1, ...]
     rollback: VersionRangeV1
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -163,7 +186,7 @@ class PackCompatibilityV1:
         if not operating_system_values:
             raise ContractValidationError("packCompatibility.operatingSystems must not be empty.")
         operating_systems: list[OperatingSystemRangeV1] = []
-        identities: set[tuple[str, tuple[str, ...]]] = set()
+        platform_identities: set[tuple[str, str]] = set()
         for index, item in enumerate(operating_system_values):
             item_name = f"packCompatibility.operatingSystems[{index}]"
             item_payload = _exact_object(
@@ -189,10 +212,13 @@ class PackCompatibilityV1:
                 },
                 field_name=item_name,
             )
-            identity = (name, architectures)
-            if identity in identities:
-                raise ContractValidationError("packCompatibility has a duplicate platform range.")
-            identities.add(identity)
+            for architecture in architectures:
+                identity = (name, architecture)
+                if identity in platform_identities:
+                    raise ContractValidationError(
+                        "packCompatibility has a duplicate operating-system architecture range."
+                    )
+                platform_identities.add(identity)
             operating_systems.append(OperatingSystemRangeV1(name, architectures, versions))
         return cls(
             contracts=VersionRangeV1.from_json_obj(
@@ -244,7 +270,7 @@ class SangrepPackManifestV1:
     digests: PackDigestsV1
     dependencies: tuple[PackDependencyV1, ...]
     conformance_verdict: PackConformanceVerdictV1
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -301,7 +327,7 @@ class SangrepPackManifestV1:
         compatibility = PackCompatibilityV1.from_json_obj(payload["compatibility"])
         _validate_resources(payload["resources"])
         execution_mode, entrypoint_ids = _validate_execution(payload["execution"])
-        permission_ids = _validate_permissions(
+        permission_ids, required_permission_ids = _validate_permissions(
             payload["permissions"], execution_mode=execution_mode
         )
         dependencies = _parse_dependencies(payload["dependencies"], owner_pack_id=pack_id)
@@ -311,12 +337,14 @@ class SangrepPackManifestV1:
             execution_mode=execution_mode,
             entrypoint_ids=entrypoint_ids,
         )
-        if family is PackFamilyV1.PARSER and "source.read" not in permission_ids:
-            raise ContractValidationError("parser packs must declare source.read permission.")
+        if family is PackFamilyV1.PARSER and "source.read" not in required_permission_ids:
+            raise ContractValidationError(
+                "parser packs must declare required source.read permission."
+            )
         _validate_provenance(payload["provenance"])
         digests = _parse_digests(payload["digests"])
-        compatibility_digest = canonical_json_sha256(
-            cast(JsonValue, thaw_json_object_v1(compatibility.wire))
+        compatibility_digest = rfc8785_json_sha256_v1(
+            cast(JsonValue, thaw_rfc8785_json_object_v1(compatibility.wire))
         )
         if digests.compatibility_contract_sha256 != compatibility_digest:
             raise ContractValidationError(
@@ -351,7 +379,7 @@ class SangrepPackManifestV1:
         )
 
     def to_json_obj(self) -> JsonObjectValue:
-        return thaw_json_object_v1(self.wire)
+        return thaw_rfc8785_json_object_v1(self.wire)
 
 
 @dataclass(frozen=True, slots=True)
@@ -374,7 +402,7 @@ class SangrepPackCatalogV1:
     version: str
     channel: PackChannelV1
     entries: tuple[PackCatalogEntryV1, ...]
-    wire: FrozenJsonObjectV1
+    wire: Rfc8785JsonObjectV1
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
@@ -453,11 +481,11 @@ class SangrepPackCatalogV1:
         )
 
     def to_json_obj(self) -> JsonObjectValue:
-        return thaw_json_object_v1(self.wire)
+        return thaw_rfc8785_json_object_v1(self.wire)
 
 
 def manifest_sha256_v1(manifest: SangrepPackManifestV1) -> str:
-    return canonical_json_sha256_omitting_field_v1(manifest.to_json_obj(), field_name="signature")
+    return rfc8785_json_sha256_omitting_field_v1(manifest.to_json_obj(), field_name="signature")
 
 
 def verify_manifest_artifact_digests_v1(
@@ -595,6 +623,20 @@ def _require_version(value: object, *, field_name: str) -> str:
     return text
 
 
+def _require_pack_relative_path(value: object, *, field_name: str) -> str:
+    text = _require_string(value, field_name=field_name)
+    if _RELATIVE_PATH.fullmatch(text) is None:
+        raise ContractValidationError(f"{field_name} must be a safe relative path label.")
+    try:
+        return require_safe_relative_path_label_v1(
+            text,
+            is_root=False,
+            field_name=field_name,
+        )
+    except ContractValidationError:
+        raise ContractValidationError(f"{field_name} must be a safe relative path label.") from None
+
+
 def _require_enum(
     enum_type: type[EnumType],
     value: object,
@@ -645,8 +687,8 @@ def _safe_int(value: object, *, field_name: str, positive: bool = False) -> int:
     return value
 
 
-def _freeze(payload: dict[str, object]) -> FrozenJsonObjectV1:
-    return freeze_json_object_v1(cast(JsonObjectValue, payload))
+def _freeze(payload: dict[str, object]) -> Rfc8785JsonObjectV1:
+    return freeze_rfc8785_json_object_v1(cast(JsonObjectValue, payload))
 
 
 def _validate_formats(value: object) -> None:
@@ -712,11 +754,18 @@ def _validate_execution(value: object) -> tuple[PackExecutionModeV1, frozenset[s
         mode = PackExecutionModeV1(mode_text)
     except ValueError:
         raise ContractValidationError("execution.mode contains an unknown enum value.") from None
-    _require_enum_value(
+    isolation_profile = _require_enum_value(
         payload["isolationProfile"],
         values={"processSandboxV1", "remoteServiceV1", "hybridProcessV1"},
         field_name="execution.isolationProfile",
     )
+    required_isolation = {
+        PackExecutionModeV1.LOCAL: "processSandboxV1",
+        PackExecutionModeV1.REMOTE: "remoteServiceV1",
+        PackExecutionModeV1.HYBRID: "hybridProcessV1",
+    }[mode]
+    if isolation_profile != required_isolation:
+        raise ContractValidationError(f"{mode.value} mode requires {required_isolation}.")
     entrypoints: set[str] = set()
     for index, item in enumerate(
         _require_list(payload["entrypoints"], field_name="execution.entrypoints")
@@ -730,14 +779,10 @@ def _validate_execution(value: object) -> tuple[PackExecutionModeV1, frozenset[s
         entrypoint_id = _require_code(
             entrypoint["entrypointId"], field_name=f"{field_name}.entrypointId"
         )
-        path = _require_string(
+        _require_pack_relative_path(
             entrypoint["relativeExecutablePath"],
             field_name=f"{field_name}.relativeExecutablePath",
         )
-        if _RELATIVE_PATH.fullmatch(path) is None or any(
-            part in {".", ".."} for part in path.split("/")
-        ):
-            raise ContractValidationError("relativeExecutablePath must stay inside the pack.")
         _require_enum_value(
             entrypoint["protocol"],
             values={"sangrepPackWorkerV1"},
@@ -754,7 +799,11 @@ def _validate_execution(value: object) -> tuple[PackExecutionModeV1, frozenset[s
     return mode, frozenset(entrypoints)
 
 
-def _validate_permissions(value: object, *, execution_mode: PackExecutionModeV1) -> frozenset[str]:
+def _validate_permissions(
+    value: object,
+    *,
+    execution_mode: PackExecutionModeV1,
+) -> tuple[frozenset[str], frozenset[str]]:
     payload = _exact_object(
         value,
         keys={"sourceDataClasses", "grants", "network", "provider", "userConsent"},
@@ -766,6 +815,7 @@ def _validate_permissions(value: object, *, execution_mode: PackExecutionModeV1)
         allow_empty=False,
     )
     permission_ids: set[str] = set()
+    required_permission_ids: set[str] = set()
     for index, item in enumerate(_require_list(payload["grants"], field_name="permissions.grants")):
         field_name = f"permissions.grants[{index}]"
         grant = _exact_object(
@@ -785,15 +835,17 @@ def _validate_permissions(value: object, *, execution_mode: PackExecutionModeV1)
         )
         if type(grant["required"]) is not bool:
             raise ContractValidationError(f"{field_name}.required must be a boolean.")
+        if grant["required"]:
+            required_permission_ids.add(permission)
         _require_string(grant["reason"], field_name=f"{field_name}.reason")
         if permission in permission_ids:
             raise ContractValidationError("permissions.grants contains a duplicate permission.")
         permission_ids.add(permission)
     if execution_mode in {PackExecutionModeV1.REMOTE, PackExecutionModeV1.HYBRID}:
         for required in ("network.connect", "provider.invoke"):
-            if required not in permission_ids:
+            if required not in required_permission_ids:
                 raise ContractValidationError(
-                    f"{execution_mode.value} packs must declare {required} permission."
+                    f"{execution_mode.value} packs must declare required {required} permission."
                 )
         network = _exact_object(
             payload["network"],
@@ -820,6 +872,11 @@ def _validate_permissions(value: object, *, execution_mode: PackExecutionModeV1)
             payload["userConsent"], values={"required"}, field_name="permissions.userConsent"
         )
     else:
+        forbidden_permissions = permission_ids & {"network.connect", "provider.invoke"}
+        if forbidden_permissions:
+            raise ContractValidationError(
+                "local packs must not declare network.connect or provider.invoke permission."
+            )
         if payload["network"] is not None or payload["provider"] is not None:
             raise ContractValidationError(
                 "local packs must not declare network or provider policy."
@@ -829,7 +886,7 @@ def _validate_permissions(value: object, *, execution_mode: PackExecutionModeV1)
             values={"notRequired", "required"},
             field_name="permissions.userConsent",
         )
-    return frozenset(permission_ids)
+    return frozenset(permission_ids), frozenset(required_permission_ids)
 
 
 def _parse_dependencies(value: object, *, owner_pack_id: str) -> tuple[PackDependencyV1, ...]:
@@ -948,15 +1005,12 @@ def _validate_license(value: object) -> None:
         field_name="license",
     )
     _require_string(payload["expression"], field_name="license.expression")
-    for field_name in ("noticePath",):
-        path = _require_string(payload[field_name], field_name=f"license.{field_name}")
-        if _RELATIVE_PATH.fullmatch(path) is None:
-            raise ContractValidationError(f"license.{field_name} must be a relative path.")
+    _require_pack_relative_path(payload["noticePath"], field_name="license.noticePath")
     paths = _require_unique_strings(
         payload["licensePaths"], field_name="license.licensePaths", allow_empty=False
     )
-    if any(_RELATIVE_PATH.fullmatch(path) is None for path in paths):
-        raise ContractValidationError("license.licensePaths contains an invalid relative path.")
+    for path in paths:
+        _require_pack_relative_path(path, field_name="license.licensePaths")
 
 
 def _validate_conformance(value: object) -> tuple[PackConformanceVerdictV1, str]:
@@ -1062,7 +1116,7 @@ def _validate_signature_binding(
             raise ContractValidationError(
                 f"unsignedEnvelope.{field_name} does not match the manifest."
             )
-    expected_manifest_sha256 = canonical_json_sha256_omitting_field_v1(
+    expected_manifest_sha256 = rfc8785_json_sha256_omitting_field_v1(
         cast(JsonObjectValue, manifest_payload), field_name="signature"
     )
     actual_manifest_sha256 = require_sha256(

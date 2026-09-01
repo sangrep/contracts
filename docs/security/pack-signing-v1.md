@@ -12,9 +12,11 @@ The signature suite is Ed25519 as defined by RFC 8032. The signed message is exa
 ASCII("SANGREP-PACK-SIGNATURE-V1") || 0x00 || RFC8785(unsignedEnvelope)
 ```
 
-The envelope contains only closed string-valued identity and digest fields. Its JSON must be UTF-8
-RFC 8785 canonical bytes. The signature field is outside the envelope and is never recursively
-hashed. Signatures are canonical base64 over exactly 64 bytes.
+The envelope contains only closed identity and digest fields. Its JSON must be UTF-8 RFC 8785
+canonical bytes. The bounded v1 profile admits strings, booleans, null, arrays, objects, and I-JSON
+safe integers; pack schemas do not admit floating-point numbers. Unicode strings are preserved
+exactly as supplied and are never normalized. The signature field is outside the envelope and is
+never recursively hashed. Signatures are canonical base64 over exactly 64 bytes.
 
 The key ID is `ed25519-sha256:` followed by 64 lowercase hexadecimal characters derived from
 SHA-256 over the exact 32 raw Ed25519 public-key bytes. Alternate algorithms, encodings, and
@@ -45,6 +47,11 @@ Rotation requires a trust-policy version increment, a new reviewed public root, 
 bounded overlap. The old root's `validUntil` closes the overlap. Revocation adds the key ID to the
 embedded denylist and cannot be undone by a later catalog or policy successor. A new registry ships
 only through a reviewed contracts artifact and consuming application update.
+
+Across policy successors, an existing key ID cannot change public key, role, publisher, channels,
+custody receipt, or `validFrom`. Its `validUntil` may only move earlier through the bounded rotation
+that introduces a new root. New roots require such a rotation, and prior rotation/revocation records
+remain immutable.
 
 Canonical positive and malicious negative cases are in
 [`vectors/v1/pack-signing.json`](../../vectors/v1/pack-signing.json).

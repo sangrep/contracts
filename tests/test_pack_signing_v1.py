@@ -211,6 +211,15 @@ def test_unsigned_envelope_rejects_noncanonical_json_bytes() -> None:
         unsigned_envelope_from_canonical_json_bytes_v1(noncanonical)
 
 
+def test_unsigned_envelope_bounds_bytes_and_integer_parsing_with_typed_errors() -> None:
+    with pytest.raises(ContractValidationError, match="serialized byte limit"):
+        unsigned_envelope_from_canonical_json_bytes_v1(b" " * 10_485_761)
+
+    oversized_integer = b'{"schemaVersion":' + (b"9" * 5000) + b"}"
+    with pytest.raises(ContractValidationError, match="I-JSON range"):
+        unsigned_envelope_from_canonical_json_bytes_v1(oversized_integer)
+
+
 @pytest.mark.parametrize(
     ("root_mutation", "build_profile", "message"),
     [
@@ -345,3 +354,70 @@ def test_trust_policy_successor_is_monotonic_and_cannot_undo_revocation() -> Non
     restored = SangrepPackTrustRootsV1.from_json_obj(restored_payload)
     with pytest.raises(ContractValidationError, match="cannot return"):
         verify_trust_policy_successor_v1(previous, restored)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("role", "catalog"),
+        ("publisherId", "other"),
+        ("channels", ["release"]),
+        ("validFrom", "2026-09-02T00:00:00Z"),
+        ("validUntil", "2026-10-01T00:00:00Z"),
+    ],
+)
+def test_trust_policy_successor_rejects_existing_root_authority_changes(
+    field_name: str,
+    value: object,
+) -> None:
+    _, public_key, key_id = _signed_manifest_json()
+    previous_payload = _trust_roots_json(public_key, key_id)
+    previous = SangrepPackTrustRootsV1.from_json_obj(previous_payload)
+    current_payload = copy.deepcopy(previous_payload)
+    current_payload["trustPolicyVersion"] = 2
+    current_root = current_payload["roots"][0]
+    assert isinstance(current_root, dict)
+    current_root[field_name] = value
+    current = SangrepPackTrustRootsV1.from_json_obj(current_payload)
+
+    with pytest.raises(ContractValidationError, match="existing trust-root authority"):
+        verify_trust_policy_successor_v1(previous, current)
+
+
+def test_trust_policy_successor_requires_new_root_to_use_bounded_rotation() -> None:
+    _, first_public_key, first_key_id = _signed_manifest_json()
+    previous_payload = _trust_roots_json(first_public_key, first_key_id)
+    previous = SangrepPackTrustRootsV1.from_json_obj(previous_payload)
+    second_private = Ed25519PrivateKey.generate()
+    second_public_key = second_private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    second_key_id = f"ed25519-sha256:{hashlib.sha256(second_public_key).hexdigest()}"
+    current_payload = copy.deepcopy(previous_payload)
+    current_payload["trustPolicyVersion"] = 2
+    current_roots = current_payload["roots"]
+    assert isinstance(current_roots, list)
+    current_roots.append(_trust_roots_json(second_public_key, second_key_id)["roots"][0])
+    current = SangrepPackTrustRootsV1.from_json_obj(current_payload)
+
+    with pytest.raises(ContractValidationError, match="bounded rotation"):
+        verify_trust_policy_successor_v1(previous, current)
+
+    old_root = current_roots[0]
+    new_root = current_roots[1]
+    assert isinstance(old_root, dict)
+    assert isinstance(new_root, dict)
+    old_root["validUntil"] = "2026-10-01T00:00:00Z"
+    new_root["validFrom"] = "2026-09-15T00:00:00Z"
+    current_payload["rotations"] = [
+        {
+            "fromKeyId": first_key_id,
+            "toKeyId": second_key_id,
+            "overlapStartsAt": "2026-09-15T00:00:00Z",
+            "overlapEndsAt": "2026-10-01T00:00:00Z",
+        }
+    ]
+    rotated = SangrepPackTrustRootsV1.from_json_obj(current_payload)
+
+    verify_trust_policy_successor_v1(previous, rotated)
