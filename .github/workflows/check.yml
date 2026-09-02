@@ -34,6 +34,10 @@ jobs:
         run: uv sync --frozen --extra dev
       - name: Run standalone acceptance
         shell: bash
+        env:
+          SANGREP_CI_EVENT_NAME: ${{ github.event_name }}
+          SANGREP_CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          SANGREP_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           started=$SECONDS
           ./scripts/check

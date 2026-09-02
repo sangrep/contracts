@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ci_event_name=${SANGREP_CI_EVENT_NAME:-}
+ci_base_sha=${SANGREP_CI_BASE_SHA:-}
+ci_head_sha=${SANGREP_CI_HEAD_SHA:-}
+
+blocked() {
+  printf 'committed-diff-check: blocked reason=%s\n' "$1" >&2
+  exit 1
+}
+
+if [[ -z "$ci_event_name" && -z "$ci_base_sha" && -z "$ci_head_sha" ]]; then
+  printf 'committed-diff-check: skipped local\n'
+  exit 0
+fi
+
+if [[ -z "$ci_event_name" || -z "$ci_base_sha" || -z "$ci_head_sha" ]]; then
+  blocked incomplete-authority
+fi
+if [[ "$ci_event_name" != "pull_request" && "$ci_event_name" != "push" ]]; then
+  blocked unsupported-event
+fi
+if [[ ! "$ci_base_sha" =~ ^[0-9a-f]{40}$ || ! "$ci_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+  blocked malformed-sha
+fi
+if ! git cat-file -e "${ci_head_sha}^{commit}" 2>/dev/null; then
+  blocked unreachable-head
+fi
+
+if [[ "$ci_base_sha" == "0000000000000000000000000000000000000000" ]]; then
+  if [[ "$ci_event_name" != "push" ]]; then
+    blocked zero-base-outside-push
+  fi
+  ci_diff_base=$(git hash-object -t tree /dev/null)
+else
+  if ! git cat-file -e "${ci_base_sha}^{commit}" 2>/dev/null; then
+    blocked unreachable-base
+  fi
+  ci_diff_base=$ci_base_sha
+fi
+
+git diff --check "${ci_diff_base}..${ci_head_sha}"
+printf 'committed-diff-check: passed\n'
