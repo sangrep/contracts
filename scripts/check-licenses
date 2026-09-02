@@ -22,6 +22,7 @@ EXPECTED_CLASSIFICATIONS = {
     "tests": "original-and-synthetic-tests",
 }
 EXPECTED_GENERATED = {
+    "src/sangrep_contracts/generated/pack_bounds_v1.py": "tools/build_schema_types.py",
     "src/sangrep_contracts/generated/pack_manifest_v1.py": "tools/build_schema_types.py",
     "src/sangrep_contracts/generated/pack_signature_v1.py": "tools/build_schema_types.py",
     "vectors/v1/manifest.json": "tools/build_vector_manifest.py",

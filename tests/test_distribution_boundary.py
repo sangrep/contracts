@@ -20,6 +20,7 @@ def test_issue_33_allowed_contract_modules_are_explicit() -> None:
         "identity.py",
         "pack.py",
         "pack_signing.py",
+        "schema_bounds.py",
     }
 
 

@@ -22,6 +22,7 @@ from .canonical import (
     thaw_rfc8785_json_object_v1,
 )
 from .filesystem import require_safe_relative_path_label_v1
+from .schema_bounds import validate_pack_schema_bounds_v1
 
 _PACK_ID = re.compile(r"[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\Z")
 _CODE = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*\Z")
@@ -133,6 +134,7 @@ class VersionRangeV1:
 
     @classmethod
     def from_json_obj(cls, value: object, *, field_name: str) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="VersionRangeV1")
         payload = _exact_object(
             value,
             keys={"minimumInclusive", "maximumExclusive"},
@@ -171,6 +173,7 @@ class PackCompatibilityV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="PackCompatibilityV1")
         payload = _exact_object(
             value,
             keys={
@@ -256,6 +259,7 @@ class PackDependencyV1:
 
     @classmethod
     def from_json_obj(cls, value: object, *, field_name: str) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="PackDependencyV1")
         payload = _exact_object(value, keys={"packId", "version"}, field_name=field_name)
         return cls(
             _require_pack_id(payload["packId"], field_name=f"{field_name}.packId"),
@@ -278,6 +282,7 @@ class SangrepPackManifestV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepPackManifestV1")
         payload = _exact_object(
             value,
             keys={
@@ -410,6 +415,7 @@ class SangrepPackCatalogV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepPackCatalogV1")
         payload = _exact_object(
             value,
             keys={"schemaVersion", "kind", "catalogId", "version", "channel", "entries"},

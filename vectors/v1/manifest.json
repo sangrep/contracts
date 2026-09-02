@@ -23,7 +23,7 @@
     },
     {
       "path": "vectors/v1/pack-manifest.json",
-      "sha256": "c41eb092298fd84b112562516cd3a533e8b46f5cee52961a50c60d1723dfcb1b"
+      "sha256": "ce4df9be3b2fafdcfb581468ca6383b29168bdf3742d74bfcfbfac4098b8e821"
     },
     {
       "path": "vectors/v1/pack-signing.json",

@@ -262,6 +262,19 @@ def test_trust_policy_rejects_role_unknown_release_and_revoked_roots(
     assert selected_key_id != ""
 
 
+def test_trust_registry_runtime_rejects_revocation_reason_above_schema_maximum() -> None:
+    _, public_key, key_id = _signed_manifest_json()
+    payload = _trust_roots_json(public_key, key_id, revoked=True)
+    revocations = payload["revocations"]
+    assert isinstance(revocations, list)
+    revocation = revocations[0]
+    assert isinstance(revocation, dict)
+    revocation["reason"] = "x" * 513
+
+    with pytest.raises(ContractValidationError, match="reason"):
+        SangrepPackTrustRootsV1.from_json_obj(payload)
+
+
 @pytest.mark.parametrize(
     ("valid_from", "valid_until", "message"),
     [

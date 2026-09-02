@@ -408,6 +408,13 @@ def _manifest_vectors() -> dict[str, object]:
     cast(dict[str, object], publisher_mismatch["publisher"])["publisherId"] = "other"
     oversized_version = copy.deepcopy(parser)
     oversized_version["version"] = f"{'9' * 129}.0.0"
+    oversized_reason_unsigned = _unsigned_parser_manifest()
+    oversized_reason_grants = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], oversized_reason_unsigned["permissions"])["grants"],
+    )
+    oversized_reason_grants[0]["reason"] = "x" * 513
+    oversized_reason = _signed_manifest(oversized_reason_unsigned)
     positives = [
         {"name": "development-parser-pack", "contract": "manifest", "value": parser},
         {
@@ -517,6 +524,11 @@ def _manifest_vectors() -> dict[str, object]:
                 "name": "oversized-semantic-version",
                 "operation": "schema-manifest",
                 "value": oversized_version,
+            },
+            {
+                "name": "permission-reason-over-schema-maximum",
+                "operation": "schema-manifest",
+                "value": oversized_reason,
             },
         ],
     }

@@ -124,6 +124,7 @@ def test_manifest_malicious_vectors_cover_required_rejections() -> None:
         "overlapping-platform-range-order-a",
         "overlapping-platform-range-order-b",
         "oversized-semantic-version",
+        "permission-reason-over-schema-maximum",
         "undeclared-network-permissions",
         "dependency-cycle",
         "dot-segment-license-path",

@@ -36,6 +36,7 @@ from .pack import (
     _safe_int,
     _schema_and_kind,
 )
+from .schema_bounds import validate_pack_schema_bounds_v1
 
 PACK_SIGNATURE_DOMAIN_V1 = b"SANGREP-PACK-SIGNATURE-V1\x00"
 _KEY_ID = re.compile(r"ed25519-sha256:[0-9a-f]{64}\Z")
@@ -72,6 +73,7 @@ class SangrepPackUnsignedEnvelopeV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepPackUnsignedEnvelopeV1")
         payload = _exact_object(
             value,
             keys={
@@ -131,6 +133,7 @@ class SangrepPackSignatureV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepPackSignatureV1")
         payload = _exact_object(
             value,
             keys={
@@ -202,6 +205,7 @@ class SangrepPackTrustRootsV1:
 
     @classmethod
     def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepPackTrustRootsV1")
         payload = _exact_object(
             value,
             keys={

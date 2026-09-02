@@ -12,8 +12,9 @@ Sangrep Contracts work unless an entry in
 There are currently no third-party source files. Development dependencies are not bundled into the
 runtime package.
 
-Generated Python wire types and vector manifests identify their generators and are checked for
-drift. Conformance inputs use synthetic domains and data. The development trust registry contains
-only public verification material from an accepted receipt; no signing secret is stored here.
+Generated Python wire types, schema-bound rules, and vector manifests identify their generators and
+are checked for drift. Conformance inputs use synthetic domains and data. The development trust
+registry contains only public verification material from an accepted receipt; no signing secret is
+stored here.
 
 The repository is licensed under Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

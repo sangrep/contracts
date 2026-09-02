@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import subprocess
 import sys
 from pathlib import Path
@@ -84,6 +85,32 @@ def test_schema_type_generator_reports_no_drift() -> None:
 
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert completed.stdout == "schema-type-drift: passed\n"
+
+
+def test_generated_bound_rules_cover_normative_manifest_and_signature_roots() -> None:
+    generated_path = ROOT / "src/sangrep_contracts/generated/pack_bounds_v1.py"
+    assert generated_path.is_file()
+    module = importlib.import_module("sangrep_contracts.generated.pack_bounds_v1")
+    rules = module.PACK_BOUND_RULES_V1
+
+    assert len(rules["SangrepPackManifestV1"]) == 50
+    assert len(rules["SangrepPackCatalogV1"]) == 6
+    assert len(rules["SangrepPackSignatureV1"]) == 3
+    assert len(rules["SangrepPackTrustRootsV1"]) == 5
+    assert (
+        ("permissions", "grants", "*", "reason"),
+        1,
+        512,
+        None,
+        None,
+    ) in rules["SangrepPackManifestV1"]
+    assert (
+        ("revocations", "*", "reason"),
+        1,
+        512,
+        None,
+        None,
+    ) in rules["SangrepPackTrustRootsV1"]
 
 
 def test_pack_vector_generator_reports_no_drift() -> None:

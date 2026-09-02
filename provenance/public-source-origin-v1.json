@@ -35,6 +35,10 @@
   ],
   "generatedArtifacts": [
     {
+      "path": "src/sangrep_contracts/generated/pack_bounds_v1.py",
+      "generator": "tools/build_schema_types.py"
+    },
+    {
       "path": "src/sangrep_contracts/generated/pack_manifest_v1.py",
       "generator": "tools/build_schema_types.py"
     },
