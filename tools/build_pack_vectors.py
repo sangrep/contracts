@@ -22,10 +22,33 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_OUTPUT = ROOT / "vectors/v1/pack-manifest.json"
 SIGNING_OUTPUT = ROOT / "vectors/v1/pack-signing.json"
 DOMAIN = b"SANGREP-PACK-SIGNATURE-V1\x00"
+CATALOG_DOMAIN = b"SANGREP-CATALOG-SIGNATURE-V1\x00"
 
 
 def _synthetic_key() -> tuple[Ed25519PrivateKey, bytes, str]:
     seed = hashlib.sha256(b"synthetic sangrep pack signature vector v1").digest()
+    signing_key = Ed25519PrivateKey.from_private_bytes(seed)
+    public_key = signing_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
+    return signing_key, public_key, key_id
+
+
+def _synthetic_catalog_key() -> tuple[Ed25519PrivateKey, bytes, str]:
+    seed = hashlib.sha256(b"synthetic sangrep catalog signature vector v1").digest()
+    signing_key = Ed25519PrivateKey.from_private_bytes(seed)
+    public_key = signing_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
+    return signing_key, public_key, key_id
+
+
+def _synthetic_current_pack_key() -> tuple[Ed25519PrivateKey, bytes, str]:
+    seed = hashlib.sha256(b"synthetic sangrep current pack signature vector v1").digest()
     signing_key = Ed25519PrivateKey.from_private_bytes(seed)
     public_key = signing_key.public_key().public_bytes(
         encoding=serialization.Encoding.Raw,
@@ -155,8 +178,12 @@ def _unsigned_parser_manifest() -> dict[str, object]:
     }
 
 
-def _signed_manifest(unsigned: dict[str, object]) -> dict[str, object]:
-    signing_key, _, key_id = _synthetic_key()
+def _signed_manifest(
+    unsigned: dict[str, object],
+    *,
+    signing_material: tuple[Ed25519PrivateKey, bytes, str] | None = None,
+) -> dict[str, object]:
+    signing_key, _, key_id = signing_material or _synthetic_key()
     manifest = copy.deepcopy(unsigned)
     digests = manifest["digests"]
     publisher = manifest["publisher"]
@@ -244,7 +271,7 @@ def _catalog(*, cyclic: bool) -> dict[str, object]:
     first_dependencies: list[dict[str, str]] = []
     if cyclic:
         first_dependencies.append({"packId": "sangrep.analysis-core", "version": "1.0.0-dev.1"})
-    return {
+    catalog: dict[str, object] = {
         "schemaVersion": 1,
         "kind": "sangrepPackCatalog",
         "catalogId": "sangrep-development",
@@ -273,6 +300,26 @@ def _catalog(*, cyclic: bool) -> dict[str, object]:
             },
         ],
     }
+    signing_key, _, key_id = _synthetic_catalog_key()
+    envelope: JsonObjectValue = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogUnsignedEnvelope",
+        "catalogId": cast(str, catalog["catalogId"]),
+        "version": cast(str, catalog["version"]),
+        "channel": cast(str, catalog["channel"]),
+        "catalogSha256": rfc8785_json_sha256_v1(cast(JsonValue, catalog)),
+    }
+    signature = signing_key.sign(CATALOG_DOMAIN + rfc8785_json_bytes_v1(cast(JsonValue, envelope)))
+    catalog["signature"] = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogSignature",
+        "suite": "Ed25519",
+        "role": "catalog",
+        "keyId": key_id,
+        "unsignedEnvelope": envelope,
+        "signatureBase64": base64.b64encode(signature).decode("ascii"),
+    }
+    return catalog
 
 
 def _trust_root(
@@ -280,6 +327,7 @@ def _trust_root(
     key_id: str,
     *,
     role: str = "packPublisher",
+    publisher_id: str = "sangrep",
     valid_from: str | None = None,
     valid_until: str | None = None,
 ) -> dict[str, object]:
@@ -295,7 +343,7 @@ def _trust_root(
         "publicKey": public_key_text,
         "suite": "Ed25519",
         "role": role,
-        "publisherId": "sangrep",
+        "publisherId": publisher_id,
         "channels": ["development"],
         "custodyClass": custody_class,
         "receiptDigest": f"sha256:{rfc8785_json_sha256_v1(cast(JsonValue, receipt))}",
@@ -304,12 +352,18 @@ def _trust_root(
     }
 
 
-def _trust_roots(public_key: bytes, key_id: str) -> dict[str, object]:
+def _trust_roots(
+    public_key: bytes,
+    key_id: str,
+    *,
+    role: str = "packPublisher",
+    publisher_id: str = "sangrep",
+) -> dict[str, object]:
     return {
         "schemaVersion": 1,
         "kind": "sangrepPackTrustRoots",
         "trustPolicyVersion": 1,
-        "roots": [_trust_root(public_key, key_id)],
+        "roots": [_trust_root(public_key, key_id, role=role, publisher_id=publisher_id)],
         "rotations": [],
         "revocations": [],
     }
@@ -408,6 +462,13 @@ def _manifest_vectors() -> dict[str, object]:
     cast(dict[str, object], publisher_mismatch["publisher"])["publisherId"] = "other"
     oversized_version = copy.deepcopy(parser)
     oversized_version["version"] = f"{'9' * 129}.0.0"
+    oversized_reason_unsigned = _unsigned_parser_manifest()
+    oversized_reason_grants = cast(
+        list[dict[str, object]],
+        cast(dict[str, object], oversized_reason_unsigned["permissions"])["grants"],
+    )
+    oversized_reason_grants[0]["reason"] = "x" * 513
+    oversized_reason = _signed_manifest(oversized_reason_unsigned)
     positives = [
         {"name": "development-parser-pack", "contract": "manifest", "value": parser},
         {
@@ -518,14 +579,27 @@ def _manifest_vectors() -> dict[str, object]:
                 "operation": "schema-manifest",
                 "value": oversized_version,
             },
+            {
+                "name": "permission-reason-over-schema-maximum",
+                "operation": "schema-manifest",
+                "value": oversized_reason,
+            },
         ],
     }
 
 
 def _signing_vectors() -> dict[str, object]:
     manifest = _parser_manifest()
+    catalog = _catalog(cyclic=False)
     _, public_key, key_id = _synthetic_key()
+    _, catalog_public_key, catalog_key_id = _synthetic_catalog_key()
     roots = _trust_roots(public_key, key_id)
+    catalog_roots = _trust_roots(
+        catalog_public_key,
+        catalog_key_id,
+        role="catalog",
+        publisher_id="sangrep-development",
+    )
     signature = cast(dict[str, object], manifest["signature"])
     envelope = cast(dict[str, object], signature["unsignedEnvelope"])
     signature_text = cast(str, signature["signatureBase64"])
@@ -586,6 +660,43 @@ def _signing_vectors() -> dict[str, object]:
             "signatureBase64": base64.b64encode(bytes(64)).decode("ascii"),
         }
     )
+    tampered_catalog = copy.deepcopy(catalog)
+    tampered_catalog_entries = cast(list[dict[str, object]], tampered_catalog["entries"])
+    tampered_catalog_entries[0]["archiveSha256"] = "f" * 64
+    tampered_catalog_signature = cast(dict[str, object], tampered_catalog["signature"])
+    tampered_catalog_envelope = cast(
+        dict[str, object], tampered_catalog_signature["unsignedEnvelope"]
+    )
+    tampered_catalog_envelope["catalogSha256"] = rfc8785_json_sha256_v1(
+        cast(
+            JsonValue,
+            {key: value for key, value in tampered_catalog.items() if key != "signature"},
+        )
+    )
+    negative_cases.append(
+        {
+            "name": "catalog-byte-tamper",
+            "operation": "catalog-policy",
+            "catalog": tampered_catalog,
+            "trustRoots": catalog_roots,
+            "buildProfile": "development",
+        }
+    )
+    wrong_catalog_role_roots = _trust_roots(
+        catalog_public_key,
+        catalog_key_id,
+        role="packPublisher",
+        publisher_id="sangrep-development",
+    )
+    negative_cases.append(
+        {
+            "name": "catalog-pack-publisher-role-confusion",
+            "operation": "catalog-policy",
+            "catalog": catalog,
+            "trustRoots": wrong_catalog_role_roots,
+            "buildProfile": "development",
+        }
+    )
     role_roots = copy.deepcopy(roots)
     cast(dict[str, object], cast(list[object], role_roots["roots"])[0])["role"] = "catalog"
     unknown_manifest = copy.deepcopy(manifest)
@@ -603,7 +714,6 @@ def _signing_vectors() -> dict[str, object]:
         ("development-root-release-build", manifest, roots, "release"),
         ("unknown-root", unknown_manifest, roots, "development"),
         ("revoked-key", manifest, revoked_roots, "development"),
-        ("rollback-revoked-artifact", manifest, revoked_roots, "development"),
     ):
         negative_cases.append(
             {
@@ -614,6 +724,31 @@ def _signing_vectors() -> dict[str, object]:
                 "buildProfile": profile,
             }
         )
+    current_signing_material = _synthetic_current_pack_key()
+    _, current_public_key, current_key_id = current_signing_material
+    rollback_current_manifest = _signed_manifest(
+        _unsigned_parser_manifest(),
+        signing_material=current_signing_material,
+    )
+    rollback_candidate_unsigned = _unsigned_parser_manifest()
+    rollback_candidate_unsigned["version"] = "0.9.1"
+    rollback_candidate = _signed_manifest(rollback_candidate_unsigned)
+    rollback_current_roots = copy.deepcopy(revoked_roots)
+    cast(list[dict[str, object]], rollback_current_roots["roots"]).append(
+        _trust_root(current_public_key, current_key_id)
+    )
+    negative_cases.append(
+        {
+            "name": "rollback-revoked-artifact",
+            "operation": "rollback-selection",
+            "currentManifest": rollback_current_manifest,
+            "candidateManifest": rollback_candidate,
+            "artifactTrustRoots": roots,
+            "currentTrustRoots": rollback_current_roots,
+            "purpose": "rollback",
+            "buildProfile": "development",
+        }
+    )
     authority_expansion = copy.deepcopy(roots)
     authority_expansion["trustPolicyVersion"] = 2
     expanded_root = cast(dict[str, object], cast(list[object], authority_expansion["roots"])[0])
@@ -677,7 +812,19 @@ def _signing_vectors() -> dict[str, object]:
                 "trustRoots": roots,
                 "keyId": key_id,
                 "unsignedEnvelopeSha256": rfc8785_json_sha256_v1(cast(JsonValue, envelope)),
-            }
+            },
+            {
+                "name": "synthetic-development-catalog-signature",
+                "catalog": catalog,
+                "trustRoots": catalog_roots,
+                "keyId": catalog_key_id,
+                "unsignedEnvelopeSha256": rfc8785_json_sha256_v1(
+                    cast(
+                        JsonValue,
+                        cast(dict[str, object], catalog["signature"])["unsignedEnvelope"],
+                    )
+                ),
+            },
         ],
         "negativeCases": negative_cases,
     }

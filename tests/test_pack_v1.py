@@ -318,3 +318,18 @@ def test_manifest_rejects_json_escaped_lone_surrogate_version_with_typed_error()
 
     with pytest.raises(ContractValidationError, match="semantic version"):
         SangrepPackManifestV1.from_json_obj(payload)
+
+
+def test_manifest_runtime_rejects_permission_reason_above_schema_maximum() -> None:
+    payload = parser_manifest_json()
+    permissions = payload["permissions"]
+    assert isinstance(permissions, dict)
+    grants = permissions["grants"]
+    assert isinstance(grants, list)
+    grant = grants[0]
+    assert isinstance(grant, dict)
+    grant["reason"] = "x" * 513
+    _rebind_manifest_sha(payload)
+
+    with pytest.raises(ContractValidationError, match="reason"):
+        SangrepPackManifestV1.from_json_obj(payload)

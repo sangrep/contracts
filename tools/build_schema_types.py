@@ -7,6 +7,7 @@ from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
 SIGNATURE_SCHEMA_ID = "https://schemas.sangrep.com/contracts/sangrep-pack-signature-v1.json"
+BOUNDS_OUTPUT = ROOT / "src/sangrep_contracts/generated/pack_bounds_v1.py"
 TARGETS = (
     (
         ROOT / "schemas/sangrep-pack-signature-v1.json",
@@ -19,6 +20,7 @@ TARGETS = (
         "Pack manifest and catalog wire types generated from JSON Schema.",
     ),
 )
+BoundRule = tuple[tuple[str, ...], int | None, int | None, int | None, int | None]
 
 
 def _wire_name(reference: str) -> str:
@@ -141,6 +143,190 @@ def render_module(schema: dict[str, object], *, docstring: str) -> str:
     return "\n".join(lines)
 
 
+def _resolve_pointer(document: dict[str, object], pointer: str) -> object:
+    selected: object = document
+    for raw_part in pointer.strip("/").split("/") if pointer.strip("/") else ():
+        part = raw_part.replace("~1", "/").replace("~0", "~")
+        if not isinstance(selected, dict) or part not in selected:
+            raise ValueError("schema reference pointer is invalid")
+        selected = selected[part]
+    return selected
+
+
+def _resolve_reference(
+    reference: str,
+    *,
+    current_schema: dict[str, object],
+    schemas_by_id: dict[str, dict[str, object]],
+) -> tuple[object, dict[str, object], str]:
+    if reference.startswith("#"):
+        target_schema = current_schema
+        pointer = reference[1:]
+    else:
+        schema_id, separator, pointer = reference.partition("#")
+        if not separator or schema_id not in schemas_by_id:
+            raise ValueError("schema reference target is unavailable")
+        target_schema = schemas_by_id[schema_id]
+    target_id = target_schema.get("$id")
+    if not isinstance(target_id, str):
+        raise ValueError("schema identifier is required")
+    return _resolve_pointer(target_schema, pointer), target_schema, f"{target_id}#{pointer}"
+
+
+def _definition_bound_rules(
+    definition: object,
+    *,
+    schema: dict[str, object],
+    schemas_by_id: dict[str, dict[str, object]],
+) -> tuple[BoundRule, ...]:
+    rules: dict[tuple[str, ...], BoundRule] = {}
+
+    def walk(
+        node: object,
+        *,
+        current_schema: dict[str, object],
+        path: tuple[str, ...],
+        active_references: frozenset[tuple[str, tuple[str, ...]]],
+    ) -> None:
+        if not isinstance(node, dict):
+            return
+        reference = node.get("$ref")
+        if isinstance(reference, str):
+            target, target_schema, marker_id = _resolve_reference(
+                reference,
+                current_schema=current_schema,
+                schemas_by_id=schemas_by_id,
+            )
+            marker = (marker_id, path)
+            if marker not in active_references:
+                walk(
+                    target,
+                    current_schema=target_schema,
+                    path=path,
+                    active_references=active_references | {marker},
+                )
+        bounds = (
+            cast(int | None, node.get("minLength")),
+            cast(int | None, node.get("maxLength")),
+            cast(int | None, node.get("minItems")),
+            cast(int | None, node.get("maxItems")),
+        )
+        if any(value is not None for value in bounds):
+            rule: BoundRule = (path, *bounds)
+            existing = rules.get(path)
+            if existing is not None and existing != rule:
+                raise ValueError("schema bound rules conflict at one wire path")
+            rules[path] = rule
+        properties = node.get("properties")
+        if isinstance(properties, dict):
+            for property_name, child in properties.items():
+                if not isinstance(property_name, str):
+                    raise ValueError("schema property name is malformed")
+                walk(
+                    child,
+                    current_schema=current_schema,
+                    path=(*path, property_name),
+                    active_references=active_references,
+                )
+        items = node.get("items")
+        if isinstance(items, dict):
+            walk(
+                items,
+                current_schema=current_schema,
+                path=(*path, "*"),
+                active_references=active_references,
+            )
+        for keyword in ("oneOf", "anyOf"):
+            branches = node.get(keyword)
+            if isinstance(branches, list):
+                for child in branches:
+                    walk(
+                        child,
+                        current_schema=current_schema,
+                        path=path,
+                        active_references=active_references,
+                    )
+
+    walk(
+        definition,
+        current_schema=schema,
+        path=(),
+        active_references=frozenset(),
+    )
+    return tuple(sorted(rules.values()))
+
+
+def render_bounds_module(schemas: tuple[dict[str, object], ...]) -> str:
+    schemas_by_id: dict[str, dict[str, object]] = {}
+    for schema in schemas:
+        schema_id = schema.get("$id")
+        if not isinstance(schema_id, str) or schema_id in schemas_by_id:
+            raise ValueError("schema identifiers must be unique strings")
+        schemas_by_id[schema_id] = schema
+    rules_by_definition: dict[str, tuple[BoundRule, ...]] = {}
+    for schema in schemas:
+        definitions = schema.get("$defs")
+        if not isinstance(definitions, dict):
+            raise ValueError("schema definitions are required")
+        for name, definition in definitions.items():
+            if not isinstance(name, str):
+                raise ValueError("schema definition name is malformed")
+            rules = _definition_bound_rules(
+                definition,
+                schema=schema,
+                schemas_by_id=schemas_by_id,
+            )
+            existing = rules_by_definition.get(name)
+            if existing is not None and existing != rules:
+                raise ValueError("same-named schema definitions have conflicting bound rules")
+            rules_by_definition[name] = rules
+    lines = [
+        '"""Pack wire bounds generated from the normative JSON Schemas."""',
+        "",
+        "from __future__ import annotations",
+        "",
+        "from typing import Final, TypeAlias",
+        "",
+        "# Generated by tools/build_schema_types.py; do not edit by hand.",
+        (
+            "PackBoundRuleV1: TypeAlias = tuple[tuple[str, ...], int | None, "
+            "int | None, int | None, int | None]"
+        ),
+        "",
+        "PACK_BOUND_RULES_V1: Final[dict[str, tuple[PackBoundRuleV1, ...]]] = {",
+    ]
+    for name, rules in sorted(rules_by_definition.items()):
+        rendered_rules: list[str] = []
+        for path, min_length, max_length, min_items, max_items in rules:
+            path_items = ", ".join(json.dumps(item) for item in path)
+            if len(path) == 1:
+                path_items += ","
+            rendered_path = f"({path_items})"
+            rendered_rules.append(
+                repr((min_length, max_length, min_items, max_items)).replace(
+                    "(", f"({rendered_path}, ", 1
+                )
+            )
+        rendered_name = json.dumps(name)
+        if not rendered_rules:
+            lines.append(f"    {rendered_name}: (),")
+        elif len(rendered_rules) == 1 and len(rendered_rules[0]) + len(rendered_name) < 82:
+            lines.append(f"    {rendered_name}: ({rendered_rules[0]},),")
+        else:
+            lines.append(f"    {rendered_name}: (")
+            lines.extend(f"        {rule}," for rule in rendered_rules)
+            lines.append("    ),")
+    lines.extend(
+        [
+            "}",
+            "",
+            '__all__ = ("PACK_BOUND_RULES_V1", "PackBoundRuleV1")',
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _write_or_check(path: Path, content: str, *, check: bool) -> bool:
     if check:
         return path.exists() and path.read_text(encoding="utf-8") == content
@@ -153,11 +339,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     arguments = parser.parse_args()
+    schemas = tuple(
+        cast(dict[str, object], json.loads(schema_path.read_text(encoding="utf-8")))
+        for schema_path, _, _ in TARGETS
+    )
     current = True
-    for schema_path, output_path, docstring in TARGETS:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    for schema, (_, output_path, docstring) in zip(schemas, TARGETS, strict=True):
         content = render_module(cast(dict[str, object], schema), docstring=docstring)
         current = _write_or_check(output_path, content, check=arguments.check) and current
+    bounds_content = render_bounds_module(schemas)
+    current = _write_or_check(BOUNDS_OUTPUT, bounds_content, check=arguments.check) and current
     if arguments.check and not current:
         print("schema-type-drift: generated types are not current")
         return 1

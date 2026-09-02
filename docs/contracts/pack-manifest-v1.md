@@ -49,9 +49,10 @@ the verdict.
 ## Catalog boundary
 
 `SangrepPackCatalogV1` points to exact manifest and archive digests and repeats exact dependencies
-for cycle detection before download. A catalog may select a key already present in the embedded
-trust registry; it cannot carry or add a trust root. Catalog and pack-publisher signing roles are
-distinct.
+for cycle detection before download. Its required `SangrepCatalogSignatureV1` binds the complete
+unsigned catalog under a separate catalog domain. Verification requires a catalog-role key already
+present in the embedded trust registry whose publisher identity equals the catalog ID. A catalog
+cannot carry or add a trust root, and a pack-publisher key cannot authorize catalog selection.
 
 The normative schema is
 [`schemas/sangrep-pack-manifest-v1.json`](../../schemas/sangrep-pack-manifest-v1.json). Canonical

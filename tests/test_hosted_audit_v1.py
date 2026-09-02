@@ -15,12 +15,14 @@ sys.path.insert(0, str(SCRIPTS))
 from public_boundary_policy import scan_bytes  # noqa: E402
 
 RUNNER_HOME = b"/" + b"home" + b"/" + b"runner" + b"/"
+DEPENDABOT_HOME = b"/" + b"home" + b"/" + b"dependabot" + b"/"
 USER_HOME = b"/" + b"Users" + b"/"
 PROJECTED_ROOTS = (
     RUNNER_HOME + b"work/contracts/contracts",
     RUNNER_HOME + b"work/_temp",
     RUNNER_HOME + b".local",
 )
+DEPENDABOT_ROOT = DEPENDABOT_HOME + b"dependabot-updater"
 
 
 def _load_hosted_audit() -> ModuleType:
@@ -109,6 +111,82 @@ def test_hosted_audit_keeps_punctuation_path_continuations_fail_closed(
     )
 
     categories = {finding.category for finding in scan_bytes(projected, source="lookalike-path")}
+    assert categories == {"local-absolute-path"}
+
+
+@pytest.mark.parametrize("root", PROJECTED_ROOTS)
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        b"/tmp",
+        b"prefix",
+        b"filex://",
+        b"includeIfx.gitdir:",
+    ],
+)
+def test_hosted_audit_keeps_prefixed_root_embeddings_fail_closed(
+    root: bytes,
+    prefix: bytes,
+) -> None:
+    audit = _load_hosted_audit()
+    payload = prefix + root + b"/example.txt"
+
+    projected = audit._project_github_hosted_runner_paths(
+        payload,
+        repository="sangrep/contracts",
+    )
+
+    categories = {finding.category for finding in scan_bytes(projected, source="embedded-path")}
+    assert categories == {"local-absolute-path"}
+
+
+@pytest.mark.parametrize("root", PROJECTED_ROOTS)
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        b"",
+        b" ",
+        b"'",
+        b" HOME='",
+        b" file://",
+        b" includeIf.gitdir:",
+        b" includeif.gitdir:",
+    ],
+)
+def test_hosted_audit_projects_roots_at_structured_left_boundaries(
+    root: bytes,
+    prefix: bytes,
+) -> None:
+    audit = _load_hosted_audit()
+    payload = prefix + root + b"/example.txt"
+
+    projected = audit._project_github_hosted_runner_paths(
+        payload,
+        repository="sangrep/contracts",
+    )
+
+    assert RUNNER_HOME not in projected
+    assert b"example.txt" in projected
+
+
+def test_hosted_audit_projects_only_exact_dependabot_updater_root() -> None:
+    audit = _load_hosted_audit()
+    accepted = b" " + DEPENDABOT_ROOT + b"/example.txt"
+    embedded = b"/tmp" + DEPENDABOT_ROOT + b"/example.txt"
+
+    projected = audit._project_github_hosted_runner_paths(
+        accepted,
+        repository="sangrep/contracts",
+    )
+    embedded_projection = audit._project_github_hosted_runner_paths(
+        embedded,
+        repository="sangrep/contracts",
+    )
+
+    assert DEPENDABOT_HOME not in projected
+    categories = {
+        finding.category for finding in scan_bytes(embedded_projection, source="dependabot-path")
+    }
     assert categories == {"local-absolute-path"}
 
 

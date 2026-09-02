@@ -21,6 +21,8 @@ REQUIRED_ENTRIES = {
     "sangrep_contracts/__init__.py",
     "sangrep_contracts/pack.py",
     "sangrep_contracts/pack_signing.py",
+    "sangrep_contracts/schema_bounds.py",
+    "sangrep_contracts/generated/pack_bounds_v1.py",
     "sangrep_contracts/generated/pack_manifest_v1.py",
     "sangrep_contracts/generated/pack_signature_v1.py",
     "sangrep_contracts/schemas/sangrep-pack-manifest-v1.json",

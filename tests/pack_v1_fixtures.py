@@ -207,7 +207,7 @@ def catalog_json(*, cyclic: bool = False) -> dict[str, object]:
     ]
     if cyclic:
         first_dependencies.append({"packId": "sangrep.analysis-core", "version": "1.0.0-dev.1"})
-    return {
+    catalog: dict[str, object] = {
         "schemaVersion": 1,
         "kind": "sangrepPackCatalog",
         "catalogId": "sangrep-development",
@@ -236,3 +236,21 @@ def catalog_json(*, cyclic: bool = False) -> dict[str, object]:
             },
         ],
     }
+    envelope = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogUnsignedEnvelope",
+        "catalogId": catalog["catalogId"],
+        "version": catalog["version"],
+        "channel": catalog["channel"],
+        "catalogSha256": canonical_subset_sha256(catalog),
+    }
+    catalog["signature"] = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogSignature",
+        "suite": "Ed25519",
+        "role": "catalog",
+        "keyId": f"ed25519-sha256:{'7' * 64}",
+        "unsignedEnvelope": envelope,
+        "signatureBase64": base64.b64encode(bytes(64)).decode("ascii"),
+    }
+    return catalog

@@ -22,11 +22,16 @@ from sangrep_contracts.pack import (
 )
 from sangrep_contracts.pack_signing import (
     BuildProfileV1,
+    PackSelectionPurposeV1,
+    SangrepCatalogSignatureV1,
     SangrepPackSignatureV1,
     SangrepPackTrustRootsV1,
     SangrepPackUnsignedEnvelopeV1,
+    catalog_signature_message_v1,
     pack_signature_message_v1,
     unsigned_envelope_from_canonical_json_bytes_v1,
+    verify_catalog_signature_v1,
+    verify_pack_selection_v1,
     verify_pack_signature_v1,
     verify_trust_policy_successor_v1,
 )
@@ -124,6 +129,7 @@ def test_manifest_malicious_vectors_cover_required_rejections() -> None:
         "overlapping-platform-range-order-a",
         "overlapping-platform-range-order-b",
         "oversized-semantic-version",
+        "permission-reason-over-schema-maximum",
         "undeclared-network-permissions",
         "dependency-cycle",
         "dot-segment-license-path",
@@ -204,7 +210,10 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
     vectors = _load(SIGNING_VECTORS_PATH)
     positive_cases = vectors["positiveCases"]
     assert isinstance(positive_cases, list)
-    assert [case["name"] for case in positive_cases] == ["synthetic-development-signature"]
+    assert [case["name"] for case in positive_cases] == [
+        "synthetic-development-signature",
+        "synthetic-development-catalog-signature",
+    ]
     positive = positive_cases[0]
     manifest = SangrepPackManifestV1.from_json_obj(positive["manifest"])
     roots = SangrepPackTrustRootsV1.from_json_obj(positive["trustRoots"])
@@ -228,6 +237,29 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         rfc8785_json_sha256_v1(cast(JsonValue, signature.unsigned_envelope.to_json_obj()))
         == positive["unsignedEnvelopeSha256"]
     )
+    catalog_positive = positive_cases[1]
+    catalog = SangrepPackCatalogV1.from_json_obj(catalog_positive["catalog"])
+    catalog_roots = SangrepPackTrustRootsV1.from_json_obj(catalog_positive["trustRoots"])
+    catalog_signature_payload = catalog.to_json_obj()["signature"]
+    _validator(signature_schema, registry, definition="SangrepCatalogSignatureV1").validate(
+        catalog_signature_payload
+    )
+    catalog_root = verify_catalog_signature_v1(
+        catalog,
+        catalog_roots,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+    assert catalog_root.key_id == catalog_positive["keyId"]
+    catalog_signature = SangrepCatalogSignatureV1.from_json_obj(catalog_signature_payload)
+    assert (
+        rfc8785_json_sha256_v1(cast(JsonValue, catalog_signature.unsigned_envelope.to_json_obj()))
+        == catalog_positive["unsignedEnvelopeSha256"]
+    )
+    assert catalog_signature_message_v1(catalog_signature.unsigned_envelope).startswith(
+        b"SANGREP-CATALOG-SIGNATURE-V1\x00"
+    )
 
     negative_cases = vectors["negativeCases"]
     assert isinstance(negative_cases, list)
@@ -243,6 +275,8 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         "digest-change-conformance-receipt",
         "digest-change-compatibility-contract",
         "invalid-ed25519-signature",
+        "catalog-byte-tamper",
+        "catalog-pack-publisher-role-confusion",
         "role-confusion",
         "development-root-release-build",
         "unknown-root",
@@ -279,6 +313,50 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
                     verification_time=VERIFICATION_TIME,
                     verifier=_real_verifier,
                 )
+        elif operation == "catalog-object":
+            with pytest.raises(ContractValidationError):
+                SangrepPackCatalogV1.from_json_obj(case["catalog"])
+        elif operation == "catalog-policy":
+            catalog = SangrepPackCatalogV1.from_json_obj(case["catalog"])
+            roots = SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
+            with pytest.raises(ContractValidationError):
+                verify_catalog_signature_v1(
+                    catalog,
+                    roots,
+                    build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
+                    verification_time=VERIFICATION_TIME,
+                    verifier=_real_verifier,
+                )
+        elif operation == "rollback-selection":
+            current = SangrepPackManifestV1.from_json_obj(case["currentManifest"])
+            candidate = SangrepPackManifestV1.from_json_obj(case["candidateManifest"])
+            artifact_roots = SangrepPackTrustRootsV1.from_json_obj(case["artifactTrustRoots"])
+            current_roots = SangrepPackTrustRootsV1.from_json_obj(case["currentTrustRoots"])
+            build_profile = BuildProfileV1(cast(str, case["buildProfile"]))
+            verify_pack_signature_v1(
+                current,
+                current_roots,
+                build_profile=build_profile,
+                verification_time=VERIFICATION_TIME,
+                verifier=_real_verifier,
+            )
+            verify_pack_signature_v1(
+                candidate,
+                artifact_roots,
+                build_profile=build_profile,
+                verification_time=VERIFICATION_TIME,
+                verifier=_real_verifier,
+            )
+            with pytest.raises(ContractValidationError, match="revoked"):
+                verify_pack_selection_v1(
+                    current,
+                    candidate,
+                    current_roots,
+                    purpose=PackSelectionPurposeV1(cast(str, case["purpose"])),
+                    build_profile=build_profile,
+                    verification_time=VERIFICATION_TIME,
+                    verifier=_real_verifier,
+                )
         elif operation == "trust-registry":
             with pytest.raises(ContractValidationError):
                 SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
@@ -289,3 +367,55 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
                 verify_trust_policy_successor_v1(previous, current)
         else:
             raise AssertionError(f"unknown signing operation: {operation}")
+
+
+def test_standalone_pack_signature_role_matches_normative_schema() -> None:
+    _, signature_schema, registry = _schema_registry()
+    vectors = _load(SIGNING_VECTORS_PATH)
+    positive_cases = vectors["positiveCases"]
+    assert isinstance(positive_cases, list)
+    positive = positive_cases[0]
+    assert isinstance(positive, dict)
+    manifest_payload = positive["manifest"]
+    assert isinstance(manifest_payload, dict)
+    signature_payload = manifest_payload["signature"]
+    assert isinstance(signature_payload, dict)
+    catalog_role_signature = json.loads(json.dumps(signature_payload))
+    assert isinstance(catalog_role_signature, dict)
+    catalog_role_signature["role"] = "catalog"
+
+    schema_errors = list(
+        _validator(
+            signature_schema,
+            registry,
+            definition="SangrepPackSignatureV1",
+        ).iter_errors(catalog_role_signature)
+    )
+    assert schema_errors
+    with pytest.raises(ContractValidationError, match="packPublisher"):
+        SangrepPackSignatureV1.from_json_obj(catalog_role_signature)
+
+
+def test_catalog_tamper_vector_reaches_ed25519_verification() -> None:
+    vectors = _load(SIGNING_VECTORS_PATH)
+    negative_cases = vectors["negativeCases"]
+    assert isinstance(negative_cases, list)
+    case = next(item for item in negative_cases if item["name"] == "catalog-byte-tamper")
+    catalog = SangrepPackCatalogV1.from_json_obj(case["catalog"])
+    roots = SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
+    verifier_calls: list[tuple[bytes, bytes, bytes]] = []
+
+    def recording_verifier(public_key: bytes, signature: bytes, message: bytes) -> bool:
+        verifier_calls.append((public_key, signature, message))
+        return _real_verifier(public_key, signature, message)
+
+    with pytest.raises(ContractValidationError, match="Ed25519 catalog signature is invalid"):
+        verify_catalog_signature_v1(
+            catalog,
+            roots,
+            build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
+            verification_time=VERIFICATION_TIME,
+            verifier=recording_verifier,
+        )
+
+    assert len(verifier_calls) == 1
