@@ -287,6 +287,25 @@ def test_pack_selection_rejects_nonpreceding_rollback() -> None:
         )
 
 
+def test_pack_selection_rejects_rollback_below_current_range() -> None:
+    current_payload, public_key, key_id = _signed_manifest_json()
+    candidate_payload, _, _ = _signed_manifest_json(version="0.8.9")
+    current = SangrepPackManifestV1.from_json_obj(current_payload)
+    candidate = SangrepPackManifestV1.from_json_obj(candidate_payload)
+    roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
+
+    with pytest.raises(ContractValidationError, match="outside"):
+        pack_signing_module.verify_pack_selection_v1(
+            current,
+            candidate,
+            roots,
+            purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
+            build_profile=BuildProfileV1.DEVELOPMENT,
+            verification_time=VERIFICATION_TIME,
+            verifier=_real_verifier,
+        )
+
+
 def test_pack_selection_revalidates_historical_artifact_under_current_denylist() -> None:
     assert hasattr(pack_signing_module, "PackSelectionPurposeV1")
     assert hasattr(pack_signing_module, "verify_pack_selection_v1")
