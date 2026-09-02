@@ -173,6 +173,7 @@ def _list(endpoint: str, *, collection_key: str | None = None) -> list[dict[str,
 def _project_github_hosted_runner_paths(data: bytes, *, repository: str) -> bytes:
     _, repository_name = repository.split("/", maxsplit=1)
     runner_home = b"/" + b"home" + b"/" + b"runner" + b"/"
+    dependabot_home = b"/" + b"home" + b"/" + b"dependabot" + b"/"
     replacements = (
         (
             runner_home + f"work/{repository_name}/{repository_name}".encode(),
@@ -180,11 +181,21 @@ def _project_github_hosted_runner_paths(data: bytes, *, repository: str) -> byte
         ),
         (runner_home + b"work/_temp", b"github-runner-temp"),
         (runner_home + b".local", b"github-runner-local"),
+        (dependabot_home + b"dependabot-updater", b"dependabot-updater-root"),
     )
     projected = data
+    left_boundary = (
+        rb"(?P<prefix>(?:^|[\s\x00])"
+        rb"(?:['\"(]|[A-Za-z_][A-Za-z0-9_]*=['\"]|file://|(?i:includeif)\.gitdir:)?"
+        rb")"
+    )
     boundary = rb"(?=$|/|[\s\x00]|['\")]+(?=$|[\s\x00]))"
     for root, replacement in replacements:
-        projected = re.sub(re.escape(root) + boundary, replacement, projected)
+        pattern = re.compile(left_boundary + re.escape(root) + boundary)
+        projected = pattern.sub(
+            lambda match, selected=replacement: match.group("prefix") + selected,
+            projected,
+        )
     return projected
 
 
