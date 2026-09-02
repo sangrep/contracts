@@ -22,6 +22,7 @@ from sangrep_contracts.pack import (
 )
 from sangrep_contracts.pack_signing import (
     BuildProfileV1,
+    PackSelectionPurposeV1,
     SangrepCatalogSignatureV1,
     SangrepPackSignatureV1,
     SangrepPackTrustRootsV1,
@@ -30,6 +31,7 @@ from sangrep_contracts.pack_signing import (
     pack_signature_message_v1,
     unsigned_envelope_from_canonical_json_bytes_v1,
     verify_catalog_signature_v1,
+    verify_pack_selection_v1,
     verify_pack_signature_v1,
     verify_trust_policy_successor_v1,
 )
@@ -322,6 +324,29 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
                     catalog,
                     roots,
                     build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
+                    verification_time=VERIFICATION_TIME,
+                    verifier=_real_verifier,
+                )
+        elif operation == "rollback-selection":
+            current = SangrepPackManifestV1.from_json_obj(case["currentManifest"])
+            candidate = SangrepPackManifestV1.from_json_obj(case["candidateManifest"])
+            artifact_roots = SangrepPackTrustRootsV1.from_json_obj(case["artifactTrustRoots"])
+            current_roots = SangrepPackTrustRootsV1.from_json_obj(case["currentTrustRoots"])
+            build_profile = BuildProfileV1(cast(str, case["buildProfile"]))
+            verify_pack_signature_v1(
+                candidate,
+                artifact_roots,
+                build_profile=build_profile,
+                verification_time=VERIFICATION_TIME,
+                verifier=_real_verifier,
+            )
+            with pytest.raises(ContractValidationError):
+                verify_pack_selection_v1(
+                    current,
+                    candidate,
+                    current_roots,
+                    purpose=PackSelectionPurposeV1(cast(str, case["purpose"])),
+                    build_profile=build_profile,
                     verification_time=VERIFICATION_TIME,
                     verifier=_real_verifier,
                 )

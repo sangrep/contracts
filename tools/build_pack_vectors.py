@@ -687,7 +687,6 @@ def _signing_vectors() -> dict[str, object]:
         ("development-root-release-build", manifest, roots, "release"),
         ("unknown-root", unknown_manifest, roots, "development"),
         ("revoked-key", manifest, revoked_roots, "development"),
-        ("rollback-revoked-artifact", manifest, revoked_roots, "development"),
     ):
         negative_cases.append(
             {
@@ -698,6 +697,21 @@ def _signing_vectors() -> dict[str, object]:
                 "buildProfile": profile,
             }
         )
+    rollback_candidate_unsigned = _unsigned_parser_manifest()
+    rollback_candidate_unsigned["version"] = "0.9.1"
+    rollback_candidate = _signed_manifest(rollback_candidate_unsigned)
+    negative_cases.append(
+        {
+            "name": "rollback-revoked-artifact",
+            "operation": "rollback-selection",
+            "currentManifest": manifest,
+            "candidateManifest": rollback_candidate,
+            "artifactTrustRoots": roots,
+            "currentTrustRoots": revoked_roots,
+            "purpose": "rollback",
+            "buildProfile": "development",
+        }
+    )
     authority_expansion = copy.deepcopy(roots)
     authority_expansion["trustPolicyVersion"] = 2
     expanded_root = cast(dict[str, object], cast(list[object], authority_expansion["roots"])[0])

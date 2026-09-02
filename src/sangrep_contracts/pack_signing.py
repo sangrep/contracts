@@ -25,6 +25,7 @@ from .pack import (
     PackFamilyV1,
     SangrepPackCatalogV1,
     SangrepPackManifestV1,
+    SemanticVersionV1,
     _exact_object,
     _freeze,
     _require_canonical_base64,
@@ -37,6 +38,7 @@ from .pack import (
     _safe_int,
     _schema_and_kind,
     catalog_sha256_v1,
+    manifest_sha256_v1,
 )
 from .schema_bounds import validate_pack_schema_bounds_v1
 
@@ -56,6 +58,11 @@ class SigningRoleV1(str, Enum):
 class BuildProfileV1(str, Enum):
     DEVELOPMENT = "development"
     RELEASE = "release"
+
+
+class PackSelectionPurposeV1(str, Enum):
+    CACHED_REUSE = "cachedReuse"
+    ROLLBACK = "rollback"
 
 
 @dataclass(frozen=True, slots=True)
@@ -439,6 +446,67 @@ def verify_catalog_signature_v1(
     ):
         raise ContractValidationError("Ed25519 catalog signature is invalid.")
     return root
+
+
+def verify_pack_selection_v1(
+    current_manifest: SangrepPackManifestV1,
+    candidate_manifest: SangrepPackManifestV1,
+    current_trust_roots: SangrepPackTrustRootsV1,
+    *,
+    purpose: PackSelectionPurposeV1,
+    build_profile: BuildProfileV1,
+    verification_time: datetime,
+    verifier: Ed25519VerifierV1,
+) -> PackTrustRootV1:
+    if not isinstance(purpose, PackSelectionPurposeV1):
+        raise ContractValidationError("purpose contains an unknown pack-selection value.")
+    current_identity = (
+        current_manifest.pack_id,
+        current_manifest.family,
+        current_manifest.publisher_id,
+        current_manifest.channel,
+    )
+    candidate_identity = (
+        candidate_manifest.pack_id,
+        candidate_manifest.family,
+        candidate_manifest.publisher_id,
+        candidate_manifest.channel,
+    )
+    if candidate_identity != current_identity:
+        raise ContractValidationError(
+            "candidate pack identity does not match the current manifest."
+        )
+    current_version = SemanticVersionV1.parse(
+        current_manifest.version,
+        field_name="current manifest version",
+    )
+    candidate_version = SemanticVersionV1.parse(
+        candidate_manifest.version,
+        field_name="candidate manifest version",
+    )
+    if purpose is PackSelectionPurposeV1.CACHED_REUSE:
+        if candidate_version != current_version or manifest_sha256_v1(
+            candidate_manifest
+        ) != manifest_sha256_v1(current_manifest):
+            raise ContractValidationError(
+                "cached reuse requires the exact current version and manifest digest."
+            )
+    else:
+        if not candidate_version.precedes(current_version):
+            raise ContractValidationError(
+                "rollback candidate version must precede current version."
+            )
+        if not current_manifest.compatibility.rollback.contains(candidate_version):
+            raise ContractValidationError(
+                "rollback candidate is outside the current rollback range."
+            )
+    return verify_pack_signature_v1(
+        candidate_manifest,
+        current_trust_roots,
+        build_profile=build_profile,
+        verification_time=verification_time,
+        verifier=verifier,
+    )
 
 
 def verify_trust_policy_successor_v1(

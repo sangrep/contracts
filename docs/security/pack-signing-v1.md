@@ -39,7 +39,8 @@ Consumers fail closed in this order:
 Pack-publisher and catalog keys use different roles and domains. Catalog verification requires a
 catalog-role root whose publisher identity equals the signed catalog ID; a pack-publisher root
 cannot verify catalog bytes. A catalog cannot add trust. Cached reuse and rollback use the current
-embedded denylist, so an older artifact does not bypass revocation.
+embedded denylist through the explicit pack-selection verifier, so an artifact that verified under
+historical trust cannot bypass a current revocation.
 
 ## Development, rotation, and revocation
 

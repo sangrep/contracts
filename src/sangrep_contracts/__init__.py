@@ -94,6 +94,7 @@ from .pack_signing import (
     BuildProfileV1,
     PackRevocationV1,
     PackRotationV1,
+    PackSelectionPurposeV1,
     PackTrustRootV1,
     SangrepCatalogSignatureV1,
     SangrepCatalogUnsignedEnvelopeV1,
@@ -107,6 +108,7 @@ from .pack_signing import (
     pack_signature_message_v1,
     unsigned_envelope_from_canonical_json_bytes_v1,
     verify_catalog_signature_v1,
+    verify_pack_selection_v1,
     verify_pack_signature_v1,
     verify_trust_policy_successor_v1,
 )
@@ -151,6 +153,7 @@ __all__ = (
     "PackFamilyV1",
     "PackRevocationV1",
     "PackRotationV1",
+    "PackSelectionPurposeV1",
     "PackTrustRootV1",
     "ProjectionRevisionV1",
     "ProjectedNodeV1",
@@ -207,5 +210,6 @@ __all__ = (
     "verify_manifest_artifact_digests_v1",
     "verify_manifest_compatibility_v1",
     "verify_pack_signature_v1",
+    "verify_pack_selection_v1",
     "verify_trust_policy_successor_v1",
 )

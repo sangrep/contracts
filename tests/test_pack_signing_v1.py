@@ -86,13 +86,21 @@ def _signed_catalog_json() -> tuple[dict[str, object], bytes, str]:
     return catalog, public_key, key_id
 
 
-def _signed_manifest_json() -> tuple[dict[str, object], bytes, str]:
+def _signed_manifest_json(
+    *,
+    version: str = "1.0.0-dev.1",
+) -> tuple[dict[str, object], bytes, str]:
     private_key, public_key, key_id = _synthetic_key()
     payload = parser_manifest_json()
     signature = payload["signature"]
     assert isinstance(signature, dict)
     envelope = signature["unsignedEnvelope"]
     assert isinstance(envelope, dict)
+    payload["version"] = version
+    envelope["version"] = version
+    envelope["manifestSha256"] = canonical_subset_sha256(
+        {key: value for key, value in payload.items() if key != "signature"}
+    )
     signature["keyId"] = key_id
     message = DOMAIN + json.dumps(
         envelope,
@@ -219,6 +227,91 @@ def test_catalog_signature_rejects_catalog_tamper_and_pack_publisher_role() -> N
         pack_signing_module.verify_catalog_signature_v1(
             catalog,
             wrong_role_roots,
+            build_profile=BuildProfileV1.DEVELOPMENT,
+            verification_time=VERIFICATION_TIME,
+            verifier=_real_verifier,
+        )
+
+
+def test_pack_selection_accepts_valid_cached_reuse_and_rollback() -> None:
+    assert hasattr(pack_signing_module, "PackSelectionPurposeV1")
+    assert hasattr(pack_signing_module, "verify_pack_selection_v1")
+    current_payload, public_key, key_id = _signed_manifest_json()
+    rollback_payload, _, _ = _signed_manifest_json(version="0.9.1")
+    current = SangrepPackManifestV1.from_json_obj(current_payload)
+    cached = SangrepPackManifestV1.from_json_obj(copy.deepcopy(current_payload))
+    rollback = SangrepPackManifestV1.from_json_obj(rollback_payload)
+    roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
+
+    cached_root = pack_signing_module.verify_pack_selection_v1(
+        current,
+        cached,
+        roots,
+        purpose=pack_signing_module.PackSelectionPurposeV1.CACHED_REUSE,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+    rollback_root = pack_signing_module.verify_pack_selection_v1(
+        current,
+        rollback,
+        roots,
+        purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+
+    assert cached_root.key_id == key_id
+    assert rollback_root.key_id == key_id
+
+
+def test_pack_selection_rejects_nonpreceding_rollback() -> None:
+    assert hasattr(pack_signing_module, "PackSelectionPurposeV1")
+    assert hasattr(pack_signing_module, "verify_pack_selection_v1")
+    current_payload, public_key, key_id = _signed_manifest_json()
+    candidate_payload, _, _ = _signed_manifest_json(version="1.1.0")
+    current = SangrepPackManifestV1.from_json_obj(current_payload)
+    candidate = SangrepPackManifestV1.from_json_obj(candidate_payload)
+    roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
+
+    with pytest.raises(ContractValidationError, match="precede"):
+        pack_signing_module.verify_pack_selection_v1(
+            current,
+            candidate,
+            roots,
+            purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
+            build_profile=BuildProfileV1.DEVELOPMENT,
+            verification_time=VERIFICATION_TIME,
+            verifier=_real_verifier,
+        )
+
+
+def test_pack_selection_revalidates_historical_artifact_under_current_denylist() -> None:
+    assert hasattr(pack_signing_module, "PackSelectionPurposeV1")
+    assert hasattr(pack_signing_module, "verify_pack_selection_v1")
+    current_payload, public_key, key_id = _signed_manifest_json()
+    candidate_payload, _, _ = _signed_manifest_json(version="0.9.1")
+    current = SangrepPackManifestV1.from_json_obj(current_payload)
+    candidate = SangrepPackManifestV1.from_json_obj(candidate_payload)
+    historical_roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
+    current_roots = SangrepPackTrustRootsV1.from_json_obj(
+        _trust_roots_json(public_key, key_id, revoked=True)
+    )
+
+    verify_pack_signature_v1(
+        candidate,
+        historical_roots,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+    with pytest.raises(ContractValidationError, match="revoked"):
+        pack_signing_module.verify_pack_selection_v1(
+            current,
+            candidate,
+            current_roots,
+            purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
             build_profile=BuildProfileV1.DEVELOPMENT,
             verification_time=VERIFICATION_TIME,
             verifier=_real_verifier,
