@@ -89,8 +89,17 @@ def _signed_catalog_json() -> tuple[dict[str, object], bytes, str]:
 def _signed_manifest_json(
     *,
     version: str = "1.0.0-dev.1",
+    signer: Ed25519PrivateKey | None = None,
 ) -> tuple[dict[str, object], bytes, str]:
-    private_key, public_key, key_id = _synthetic_key()
+    if signer is None:
+        private_key, public_key, key_id = _synthetic_key()
+    else:
+        private_key = signer
+        public_key = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
     payload = parser_manifest_json()
     signature = payload["signature"]
     assert isinstance(signature, dict)
@@ -306,18 +315,81 @@ def test_pack_selection_rejects_rollback_below_current_range() -> None:
         )
 
 
+def test_pack_selection_rejects_rebound_policy_from_unsigned_current_manifest() -> None:
+    current_payload, public_key, key_id = _signed_manifest_json()
+    candidate_payload, _, _ = _signed_manifest_json(version="0.8.9")
+    rebound_current = copy.deepcopy(current_payload)
+    compatibility = rebound_current["compatibility"]
+    assert isinstance(compatibility, dict)
+    rollback = compatibility["rollback"]
+    assert isinstance(rollback, dict)
+    rollback["minimumInclusive"] = "0.8.0"
+    compatibility_digest = canonical_subset_sha256(compatibility)
+    digests = rebound_current["digests"]
+    assert isinstance(digests, dict)
+    digests["compatibilityContractSha256"] = compatibility_digest
+    signature = rebound_current["signature"]
+    assert isinstance(signature, dict)
+    envelope = signature["unsignedEnvelope"]
+    assert isinstance(envelope, dict)
+    envelope["compatibilityContractSha256"] = compatibility_digest
+    envelope["manifestSha256"] = canonical_subset_sha256(
+        {key: value for key, value in rebound_current.items() if key != "signature"}
+    )
+    current = SangrepPackManifestV1.from_json_obj(rebound_current)
+    candidate = SangrepPackManifestV1.from_json_obj(candidate_payload)
+    roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
+
+    with pytest.raises(ContractValidationError, match="signature"):
+        pack_signing_module.verify_pack_selection_v1(
+            current,
+            candidate,
+            roots,
+            purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
+            build_profile=BuildProfileV1.DEVELOPMENT,
+            verification_time=VERIFICATION_TIME,
+            verifier=_real_verifier,
+        )
+
+
 def test_pack_selection_revalidates_historical_artifact_under_current_denylist() -> None:
     assert hasattr(pack_signing_module, "PackSelectionPurposeV1")
     assert hasattr(pack_signing_module, "verify_pack_selection_v1")
-    current_payload, public_key, key_id = _signed_manifest_json()
-    candidate_payload, _, _ = _signed_manifest_json(version="0.9.1")
+    current_signer = Ed25519PrivateKey.from_private_bytes(
+        hashlib.sha256(b"synthetic current pack selection test key v1").digest()
+    )
+    current_payload, current_public_key, current_key_id = _signed_manifest_json(
+        signer=current_signer
+    )
+    candidate_payload, candidate_public_key, candidate_key_id = _signed_manifest_json(
+        version="0.9.1"
+    )
     current = SangrepPackManifestV1.from_json_obj(current_payload)
     candidate = SangrepPackManifestV1.from_json_obj(candidate_payload)
-    historical_roots = SangrepPackTrustRootsV1.from_json_obj(_trust_roots_json(public_key, key_id))
-    current_roots = SangrepPackTrustRootsV1.from_json_obj(
-        _trust_roots_json(public_key, key_id, revoked=True)
+    historical_roots = SangrepPackTrustRootsV1.from_json_obj(
+        _trust_roots_json(candidate_public_key, candidate_key_id)
     )
+    current_roots_payload = _trust_roots_json(current_public_key, current_key_id)
+    revoked_candidate_payload = _trust_roots_json(
+        candidate_public_key,
+        candidate_key_id,
+        revoked=True,
+    )
+    current_roots = current_roots_payload["roots"]
+    revoked_candidate_roots = revoked_candidate_payload["roots"]
+    assert isinstance(current_roots, list)
+    assert isinstance(revoked_candidate_roots, list)
+    current_roots.extend(revoked_candidate_roots)
+    current_roots_payload["revocations"] = revoked_candidate_payload["revocations"]
+    current_trust_roots = SangrepPackTrustRootsV1.from_json_obj(current_roots_payload)
 
+    verify_pack_signature_v1(
+        current,
+        current_trust_roots,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
     verify_pack_signature_v1(
         candidate,
         historical_roots,
@@ -329,7 +401,7 @@ def test_pack_selection_revalidates_historical_artifact_under_current_denylist()
         pack_signing_module.verify_pack_selection_v1(
             current,
             candidate,
-            current_roots,
+            current_trust_roots,
             purpose=pack_signing_module.PackSelectionPurposeV1.ROLLBACK,
             build_profile=BuildProfileV1.DEVELOPMENT,
             verification_time=VERIFICATION_TIME,

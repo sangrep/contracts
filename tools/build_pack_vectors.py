@@ -47,6 +47,17 @@ def _synthetic_catalog_key() -> tuple[Ed25519PrivateKey, bytes, str]:
     return signing_key, public_key, key_id
 
 
+def _synthetic_current_pack_key() -> tuple[Ed25519PrivateKey, bytes, str]:
+    seed = hashlib.sha256(b"synthetic sangrep current pack signature vector v1").digest()
+    signing_key = Ed25519PrivateKey.from_private_bytes(seed)
+    public_key = signing_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
+    return signing_key, public_key, key_id
+
+
 def _compatibility() -> dict[str, object]:
     return {
         "schemaVersion": 1,
@@ -167,8 +178,12 @@ def _unsigned_parser_manifest() -> dict[str, object]:
     }
 
 
-def _signed_manifest(unsigned: dict[str, object]) -> dict[str, object]:
-    signing_key, _, key_id = _synthetic_key()
+def _signed_manifest(
+    unsigned: dict[str, object],
+    *,
+    signing_material: tuple[Ed25519PrivateKey, bytes, str] | None = None,
+) -> dict[str, object]:
+    signing_key, _, key_id = signing_material or _synthetic_key()
     manifest = copy.deepcopy(unsigned)
     digests = manifest["digests"]
     publisher = manifest["publisher"]
@@ -648,11 +663,23 @@ def _signing_vectors() -> dict[str, object]:
     tampered_catalog = copy.deepcopy(catalog)
     tampered_catalog_entries = cast(list[dict[str, object]], tampered_catalog["entries"])
     tampered_catalog_entries[0]["archiveSha256"] = "f" * 64
+    tampered_catalog_signature = cast(dict[str, object], tampered_catalog["signature"])
+    tampered_catalog_envelope = cast(
+        dict[str, object], tampered_catalog_signature["unsignedEnvelope"]
+    )
+    tampered_catalog_envelope["catalogSha256"] = rfc8785_json_sha256_v1(
+        cast(
+            JsonValue,
+            {key: value for key, value in tampered_catalog.items() if key != "signature"},
+        )
+    )
     negative_cases.append(
         {
             "name": "catalog-byte-tamper",
-            "operation": "catalog-object",
+            "operation": "catalog-policy",
             "catalog": tampered_catalog,
+            "trustRoots": catalog_roots,
+            "buildProfile": "development",
         }
     )
     wrong_catalog_role_roots = _trust_roots(
@@ -697,17 +724,27 @@ def _signing_vectors() -> dict[str, object]:
                 "buildProfile": profile,
             }
         )
+    current_signing_material = _synthetic_current_pack_key()
+    _, current_public_key, current_key_id = current_signing_material
+    rollback_current_manifest = _signed_manifest(
+        _unsigned_parser_manifest(),
+        signing_material=current_signing_material,
+    )
     rollback_candidate_unsigned = _unsigned_parser_manifest()
     rollback_candidate_unsigned["version"] = "0.9.1"
     rollback_candidate = _signed_manifest(rollback_candidate_unsigned)
+    rollback_current_roots = copy.deepcopy(revoked_roots)
+    cast(list[dict[str, object]], rollback_current_roots["roots"]).append(
+        _trust_root(current_public_key, current_key_id)
+    )
     negative_cases.append(
         {
             "name": "rollback-revoked-artifact",
             "operation": "rollback-selection",
-            "currentManifest": manifest,
+            "currentManifest": rollback_current_manifest,
             "candidateManifest": rollback_candidate,
             "artifactTrustRoots": roots,
-            "currentTrustRoots": revoked_roots,
+            "currentTrustRoots": rollback_current_roots,
             "purpose": "rollback",
             "buildProfile": "development",
         }

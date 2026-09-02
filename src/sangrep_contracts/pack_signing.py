@@ -160,9 +160,12 @@ class SangrepPackSignatureV1:
         _schema_and_kind(payload, kind="sangrepPackSignature")
         suite = _require_enum_value(payload["suite"], values={"Ed25519"}, field_name="suite")
         key_id = _require_key_id(payload["keyId"], field_name="keyId")
+        role = _require_enum(SigningRoleV1, payload["role"], field_name="role")
+        if role is not SigningRoleV1.PACK_PUBLISHER:
+            raise ContractValidationError("pack signature role must be packPublisher.")
         return cls(
             suite=suite,
-            role=_require_enum(SigningRoleV1, payload["role"], field_name="role"),
+            role=role,
             key_id=key_id,
             unsigned_envelope=SangrepPackUnsignedEnvelopeV1.from_json_obj(
                 payload["unsignedEnvelope"]
@@ -460,6 +463,13 @@ def verify_pack_selection_v1(
 ) -> PackTrustRootV1:
     if not isinstance(purpose, PackSelectionPurposeV1):
         raise ContractValidationError("purpose contains an unknown pack-selection value.")
+    verify_pack_signature_v1(
+        current_manifest,
+        current_trust_roots,
+        build_profile=build_profile,
+        verification_time=verification_time,
+        verifier=verifier,
+    )
     current_identity = (
         current_manifest.pack_id,
         current_manifest.family,

@@ -334,13 +334,20 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
             current_roots = SangrepPackTrustRootsV1.from_json_obj(case["currentTrustRoots"])
             build_profile = BuildProfileV1(cast(str, case["buildProfile"]))
             verify_pack_signature_v1(
+                current,
+                current_roots,
+                build_profile=build_profile,
+                verification_time=VERIFICATION_TIME,
+                verifier=_real_verifier,
+            )
+            verify_pack_signature_v1(
                 candidate,
                 artifact_roots,
                 build_profile=build_profile,
                 verification_time=VERIFICATION_TIME,
                 verifier=_real_verifier,
             )
-            with pytest.raises(ContractValidationError):
+            with pytest.raises(ContractValidationError, match="revoked"):
                 verify_pack_selection_v1(
                     current,
                     candidate,
@@ -360,3 +367,55 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
                 verify_trust_policy_successor_v1(previous, current)
         else:
             raise AssertionError(f"unknown signing operation: {operation}")
+
+
+def test_standalone_pack_signature_role_matches_normative_schema() -> None:
+    _, signature_schema, registry = _schema_registry()
+    vectors = _load(SIGNING_VECTORS_PATH)
+    positive_cases = vectors["positiveCases"]
+    assert isinstance(positive_cases, list)
+    positive = positive_cases[0]
+    assert isinstance(positive, dict)
+    manifest_payload = positive["manifest"]
+    assert isinstance(manifest_payload, dict)
+    signature_payload = manifest_payload["signature"]
+    assert isinstance(signature_payload, dict)
+    catalog_role_signature = json.loads(json.dumps(signature_payload))
+    assert isinstance(catalog_role_signature, dict)
+    catalog_role_signature["role"] = "catalog"
+
+    schema_errors = list(
+        _validator(
+            signature_schema,
+            registry,
+            definition="SangrepPackSignatureV1",
+        ).iter_errors(catalog_role_signature)
+    )
+    assert schema_errors
+    with pytest.raises(ContractValidationError, match="packPublisher"):
+        SangrepPackSignatureV1.from_json_obj(catalog_role_signature)
+
+
+def test_catalog_tamper_vector_reaches_ed25519_verification() -> None:
+    vectors = _load(SIGNING_VECTORS_PATH)
+    negative_cases = vectors["negativeCases"]
+    assert isinstance(negative_cases, list)
+    case = next(item for item in negative_cases if item["name"] == "catalog-byte-tamper")
+    catalog = SangrepPackCatalogV1.from_json_obj(case["catalog"])
+    roots = SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
+    verifier_calls: list[tuple[bytes, bytes, bytes]] = []
+
+    def recording_verifier(public_key: bytes, signature: bytes, message: bytes) -> bool:
+        verifier_calls.append((public_key, signature, message))
+        return _real_verifier(public_key, signature, message)
+
+    with pytest.raises(ContractValidationError, match="Ed25519 catalog signature is invalid"):
+        verify_catalog_signature_v1(
+            catalog,
+            roots,
+            build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
+            verification_time=VERIFICATION_TIME,
+            verifier=recording_verifier,
+        )
+
+    assert len(verifier_calls) == 1

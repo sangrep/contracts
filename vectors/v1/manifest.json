@@ -27,7 +27,7 @@
     },
     {
       "path": "vectors/v1/pack-signing.json",
-      "sha256": "463bc7b266610ca328c8328182fec6f49d7889e3086c84edc6d1b9a1d6b57806"
+      "sha256": "90117c41d0c613f9f3224da14a3f15c4e6d2c9d3f43eb0b75610bfacabeeda5f"
     },
     {
       "path": "trust/development-pack-roots-v1.json",

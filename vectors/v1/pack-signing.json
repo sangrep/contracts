@@ -476,7 +476,7 @@
     },
     {
       "name": "catalog-byte-tamper",
-      "operation": "catalog-object",
+      "operation": "catalog-policy",
       "catalog": {
         "schemaVersion": 1,
         "kind": "sangrepPackCatalog",
@@ -522,11 +522,35 @@
             "catalogId": "sangrep-development",
             "version": "1.0.0-dev.1",
             "channel": "development",
-            "catalogSha256": "ffc1254aef2e04b0ce237f366c9914b5d8fce8d2bbe830ed66e11897a5881998"
+            "catalogSha256": "e902ab73e9ed50a0fef45a374ff218309d16f826df8f2602e784e4fdbb1268be"
           },
           "signatureBase64": "wQaW64jcPOecaN4WYGev+X3ARANcu+nu5VGWtgiO2rkavagkXm45BBEPJjr3RDnXsBXuPZYyZtUAGuBLP85BBw=="
         }
-      }
+      },
+      "trustRoots": {
+        "schemaVersion": 1,
+        "kind": "sangrepPackTrustRoots",
+        "trustPolicyVersion": 1,
+        "roots": [
+          {
+            "keyId": "ed25519-sha256:ab64ec7b6caf5f73def9c133a35a4b5c7059554290c03899138bdd029db235fb",
+            "publicKey": "TcY1V72Nw84fFLAjaxejkJUMyRTXIN8djm+Axs1Zj9o=",
+            "suite": "Ed25519",
+            "role": "catalog",
+            "publisherId": "sangrep-development",
+            "channels": [
+              "development"
+            ],
+            "custodyClass": "synthetic-test-only",
+            "receiptDigest": "sha256:62027d7f5d8d9fd90c00e64964cf827467eb4b09435b8050ea54f9b5b846abae",
+            "validFrom": null,
+            "validUntil": null
+          }
+        ],
+        "rotations": [],
+        "revocations": []
+      },
+      "buildProfile": "development"
     },
     {
       "name": "catalog-pack-publisher-role-confusion",
@@ -1457,7 +1481,7 @@
           "kind": "sangrepPackSignature",
           "suite": "Ed25519",
           "role": "packPublisher",
-          "keyId": "ed25519-sha256:d6fb4d49f1ec6e813d1469d71c5eb59fa4ccc38d1cbc51d9f4ff53b776f3bc67",
+          "keyId": "ed25519-sha256:7e2745698ea1306585d26e4266da27d3c11b832f6d67e9667a50d963da519e88",
           "unsignedEnvelope": {
             "schemaVersion": 1,
             "kind": "sangrepPackUnsignedEnvelope",
@@ -1474,7 +1498,7 @@
             "conformanceReceiptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
             "compatibilityContractSha256": "c6c8e2621feb9f05bad3aeb3ff4181fd07280bbab23c0c01fd2603b64a8de122"
           },
-          "signatureBase64": "O4NQ7qnr3Wh1kwh5C7QjJNqLjBENMomEgkNL5lAs3XxkyoXHE/POzdjKg9fmsqRJvZltMDLUF/BpCMuuSFF1DA=="
+          "signatureBase64": "BjHxL9uZh/haBbcpi5u4Ed8iQufEssofj0MZLCo8JM8Z+STvH3yLiimBO7zMhHHueB3jwAlXo6MV0j9BEtZ1CQ=="
         }
       },
       "candidateManifest": {
@@ -1666,6 +1690,20 @@
             ],
             "custodyClass": "synthetic-test-only",
             "receiptDigest": "sha256:1b18cbb0a61321c78afeee3c540f5b0407552abfe3b2a43e96279373508594de",
+            "validFrom": null,
+            "validUntil": null
+          },
+          {
+            "keyId": "ed25519-sha256:7e2745698ea1306585d26e4266da27d3c11b832f6d67e9667a50d963da519e88",
+            "publicKey": "NfdMKM5tSS+QkhBozfGrMhG7WQyWMSM3GU2nBOxypcM=",
+            "suite": "Ed25519",
+            "role": "packPublisher",
+            "publisherId": "sangrep",
+            "channels": [
+              "development"
+            ],
+            "custodyClass": "synthetic-test-only",
+            "receiptDigest": "sha256:2bc1a91ea9a61d7a0720935b655ce937b5d2941627309189d800a524a723a8ec",
             "validFrom": null,
             "validUntil": null
           }
