@@ -22,11 +22,14 @@ from sangrep_contracts.pack import (
 )
 from sangrep_contracts.pack_signing import (
     BuildProfileV1,
+    SangrepCatalogSignatureV1,
     SangrepPackSignatureV1,
     SangrepPackTrustRootsV1,
     SangrepPackUnsignedEnvelopeV1,
+    catalog_signature_message_v1,
     pack_signature_message_v1,
     unsigned_envelope_from_canonical_json_bytes_v1,
+    verify_catalog_signature_v1,
     verify_pack_signature_v1,
     verify_trust_policy_successor_v1,
 )
@@ -205,7 +208,10 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
     vectors = _load(SIGNING_VECTORS_PATH)
     positive_cases = vectors["positiveCases"]
     assert isinstance(positive_cases, list)
-    assert [case["name"] for case in positive_cases] == ["synthetic-development-signature"]
+    assert [case["name"] for case in positive_cases] == [
+        "synthetic-development-signature",
+        "synthetic-development-catalog-signature",
+    ]
     positive = positive_cases[0]
     manifest = SangrepPackManifestV1.from_json_obj(positive["manifest"])
     roots = SangrepPackTrustRootsV1.from_json_obj(positive["trustRoots"])
@@ -229,6 +235,29 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         rfc8785_json_sha256_v1(cast(JsonValue, signature.unsigned_envelope.to_json_obj()))
         == positive["unsignedEnvelopeSha256"]
     )
+    catalog_positive = positive_cases[1]
+    catalog = SangrepPackCatalogV1.from_json_obj(catalog_positive["catalog"])
+    catalog_roots = SangrepPackTrustRootsV1.from_json_obj(catalog_positive["trustRoots"])
+    catalog_signature_payload = catalog.to_json_obj()["signature"]
+    _validator(signature_schema, registry, definition="SangrepCatalogSignatureV1").validate(
+        catalog_signature_payload
+    )
+    catalog_root = verify_catalog_signature_v1(
+        catalog,
+        catalog_roots,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+    assert catalog_root.key_id == catalog_positive["keyId"]
+    catalog_signature = SangrepCatalogSignatureV1.from_json_obj(catalog_signature_payload)
+    assert (
+        rfc8785_json_sha256_v1(cast(JsonValue, catalog_signature.unsigned_envelope.to_json_obj()))
+        == catalog_positive["unsignedEnvelopeSha256"]
+    )
+    assert catalog_signature_message_v1(catalog_signature.unsigned_envelope).startswith(
+        b"SANGREP-CATALOG-SIGNATURE-V1\x00"
+    )
 
     negative_cases = vectors["negativeCases"]
     assert isinstance(negative_cases, list)
@@ -244,6 +273,8 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
         "digest-change-conformance-receipt",
         "digest-change-compatibility-contract",
         "invalid-ed25519-signature",
+        "catalog-byte-tamper",
+        "catalog-pack-publisher-role-confusion",
         "role-confusion",
         "development-root-release-build",
         "unknown-root",
@@ -275,6 +306,20 @@ def test_signing_vectors_verify_and_cover_malicious_cases() -> None:
             with pytest.raises(ContractValidationError):
                 verify_pack_signature_v1(
                     manifest,
+                    roots,
+                    build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
+                    verification_time=VERIFICATION_TIME,
+                    verifier=_real_verifier,
+                )
+        elif operation == "catalog-object":
+            with pytest.raises(ContractValidationError):
+                SangrepPackCatalogV1.from_json_obj(case["catalog"])
+        elif operation == "catalog-policy":
+            catalog = SangrepPackCatalogV1.from_json_obj(case["catalog"])
+            roots = SangrepPackTrustRootsV1.from_json_obj(case["trustRoots"])
+            with pytest.raises(ContractValidationError):
+                verify_catalog_signature_v1(
+                    catalog,
                     roots,
                     build_profile=BuildProfileV1(cast(str, case["buildProfile"])),
                     verification_time=VERIFICATION_TIME,

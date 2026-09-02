@@ -13,10 +13,15 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
-from pack_v1_fixtures import canonical_subset_sha256, parser_manifest_json
+from pack_v1_fixtures import canonical_subset_sha256, catalog_json, parser_manifest_json
 
-from sangrep_contracts import ContractValidationError
-from sangrep_contracts.pack import SangrepPackManifestV1
+import sangrep_contracts.pack_signing as pack_signing_module
+from sangrep_contracts import (
+    ContractValidationError,
+    rfc8785_json_bytes_v1,
+    rfc8785_json_sha256_v1,
+)
+from sangrep_contracts.pack import SangrepPackCatalogV1, SangrepPackManifestV1
 from sangrep_contracts.pack_signing import (
     BuildProfileV1,
     SangrepPackSignatureV1,
@@ -30,6 +35,7 @@ from sangrep_contracts.pack_signing import (
 )
 
 DOMAIN = b"SANGREP-PACK-SIGNATURE-V1\x00"
+CATALOG_DOMAIN = b"SANGREP-CATALOG-SIGNATURE-V1\x00"
 VERIFICATION_TIME = datetime(2026, 9, 2, 0, 0, tzinfo=UTC)
 
 
@@ -42,6 +48,42 @@ def _synthetic_key() -> tuple[Ed25519PrivateKey, bytes, str]:
     )
     key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
     return private_key, public_key, key_id
+
+
+def _synthetic_catalog_key() -> tuple[Ed25519PrivateKey, bytes, str]:
+    seed = hashlib.sha256(b"synthetic sangrep catalog signature vector v1").digest()
+    private_key = Ed25519PrivateKey.from_private_bytes(seed)
+    public_key = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    key_id = f"ed25519-sha256:{hashlib.sha256(public_key).hexdigest()}"
+    return private_key, public_key, key_id
+
+
+def _signed_catalog_json() -> tuple[dict[str, object], bytes, str]:
+    private_key, public_key, key_id = _synthetic_catalog_key()
+    catalog = catalog_json()
+    catalog.pop("signature", None)
+    envelope = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogUnsignedEnvelope",
+        "catalogId": catalog["catalogId"],
+        "version": catalog["version"],
+        "channel": catalog["channel"],
+        "catalogSha256": rfc8785_json_sha256_v1(catalog),
+    }
+    signature = private_key.sign(CATALOG_DOMAIN + rfc8785_json_bytes_v1(envelope))
+    catalog["signature"] = {
+        "schemaVersion": 1,
+        "kind": "sangrepCatalogSignature",
+        "suite": "Ed25519",
+        "role": "catalog",
+        "keyId": key_id,
+        "unsignedEnvelope": envelope,
+        "signatureBase64": base64.b64encode(signature).decode("ascii"),
+    }
+    return catalog, public_key, key_id
 
 
 def _signed_manifest_json() -> tuple[dict[str, object], bytes, str]:
@@ -77,6 +119,7 @@ def _trust_roots_json(
     key_id: str,
     *,
     role: str = "packPublisher",
+    publisher_id: str = "sangrep",
     channels: list[str] | None = None,
     revoked: bool = False,
     valid_from: str | None = None,
@@ -94,7 +137,7 @@ def _trust_roots_json(
                 "publicKey": public_key_text,
                 "suite": "Ed25519",
                 "role": role,
-                "publisherId": "sangrep",
+                "publisherId": publisher_id,
                 "channels": channels or ["development"],
                 "custodyClass": custody_class,
                 "receiptDigest": _receipt_digest(public_key_text, key_id, custody_class),
@@ -115,6 +158,71 @@ def _trust_roots_json(
             else []
         ),
     }
+
+
+def test_catalog_requires_a_bound_catalog_signature() -> None:
+    payload = catalog_json()
+    payload.pop("signature", None)
+
+    with pytest.raises(ContractValidationError, match="missing or unknown fields"):
+        SangrepPackCatalogV1.from_json_obj(payload)
+
+
+def test_catalog_signature_verifies_with_catalog_role_root() -> None:
+    assert hasattr(pack_signing_module, "verify_catalog_signature_v1")
+    payload, public_key, key_id = _signed_catalog_json()
+    catalog = SangrepPackCatalogV1.from_json_obj(payload)
+    roots = SangrepPackTrustRootsV1.from_json_obj(
+        _trust_roots_json(
+            public_key,
+            key_id,
+            role="catalog",
+            publisher_id="sangrep-development",
+        )
+    )
+
+    root = pack_signing_module.verify_catalog_signature_v1(
+        catalog,
+        roots,
+        build_profile=BuildProfileV1.DEVELOPMENT,
+        verification_time=VERIFICATION_TIME,
+        verifier=_real_verifier,
+    )
+
+    assert root.key_id == key_id
+    assert root.role.value == "catalog"
+
+
+def test_catalog_signature_rejects_catalog_tamper_and_pack_publisher_role() -> None:
+    assert hasattr(pack_signing_module, "verify_catalog_signature_v1")
+    payload, public_key, key_id = _signed_catalog_json()
+    tampered = copy.deepcopy(payload)
+    entries = tampered["entries"]
+    assert isinstance(entries, list)
+    entry = entries[0]
+    assert isinstance(entry, dict)
+    entry["archiveSha256"] = "f" * 64
+
+    with pytest.raises(ContractValidationError, match="catalogSha256"):
+        SangrepPackCatalogV1.from_json_obj(tampered)
+
+    catalog = SangrepPackCatalogV1.from_json_obj(payload)
+    wrong_role_roots = SangrepPackTrustRootsV1.from_json_obj(
+        _trust_roots_json(
+            public_key,
+            key_id,
+            role="packPublisher",
+            publisher_id="sangrep-development",
+        )
+    )
+    with pytest.raises(ContractValidationError, match="role"):
+        pack_signing_module.verify_catalog_signature_v1(
+            catalog,
+            wrong_role_roots,
+            build_profile=BuildProfileV1.DEVELOPMENT,
+            verification_time=VERIFICATION_TIME,
+            verifier=_real_verifier,
+        )
 
 
 def _real_verifier(public_key: bytes, signature: bytes, message: bytes) -> bool:

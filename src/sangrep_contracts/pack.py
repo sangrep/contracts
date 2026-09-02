@@ -418,10 +418,21 @@ class SangrepPackCatalogV1:
         validate_pack_schema_bounds_v1(value, definition="SangrepPackCatalogV1")
         payload = _exact_object(
             value,
-            keys={"schemaVersion", "kind", "catalogId", "version", "channel", "entries"},
+            keys={
+                "schemaVersion",
+                "kind",
+                "catalogId",
+                "version",
+                "channel",
+                "entries",
+                "signature",
+            },
             field_name="sangrepPackCatalog",
         )
         _schema_and_kind(payload, kind="sangrepPackCatalog")
+        catalog_id = _require_pack_id(payload["catalogId"], field_name="catalogId")
+        version = _require_version(payload["version"], field_name="version")
+        channel = _require_enum(PackChannelV1, payload["channel"], field_name="channel")
         entry_values = _require_list(payload["entries"], field_name="entries")
         entries: list[PackCatalogEntryV1] = []
         identities: set[tuple[str, str]] = set()
@@ -482,10 +493,16 @@ class SangrepPackCatalogV1:
                     raise ContractValidationError(
                         "catalog dependency is not an exact catalog entry."
                     )
+        _validate_catalog_signature_binding(
+            payload,
+            catalog_id=catalog_id,
+            version=version,
+            channel=channel,
+        )
         return cls(
-            catalog_id=_require_pack_id(payload["catalogId"], field_name="catalogId"),
-            version=_require_version(payload["version"], field_name="version"),
-            channel=_require_enum(PackChannelV1, payload["channel"], field_name="channel"),
+            catalog_id=catalog_id,
+            version=version,
+            channel=channel,
             entries=tuple(entries),
             wire=_freeze(payload),
         )
@@ -496,6 +513,10 @@ class SangrepPackCatalogV1:
 
 def manifest_sha256_v1(manifest: SangrepPackManifestV1) -> str:
     return rfc8785_json_sha256_omitting_field_v1(manifest.to_json_obj(), field_name="signature")
+
+
+def catalog_sha256_v1(catalog: SangrepPackCatalogV1) -> str:
+    return rfc8785_json_sha256_omitting_field_v1(catalog.to_json_obj(), field_name="signature")
 
 
 def verify_manifest_artifact_digests_v1(
@@ -1135,6 +1156,69 @@ def _validate_signature_binding(
     )
     if actual_manifest_sha256 != expected_manifest_sha256:
         raise ContractValidationError("manifestSha256 does not match the unsigned manifest.")
+
+
+def _validate_catalog_signature_binding(
+    catalog_payload: dict[str, object],
+    *,
+    catalog_id: str,
+    version: str,
+    channel: PackChannelV1,
+) -> None:
+    signature = _exact_object(
+        catalog_payload["signature"],
+        keys={
+            "schemaVersion",
+            "kind",
+            "suite",
+            "role",
+            "keyId",
+            "unsignedEnvelope",
+            "signatureBase64",
+        },
+        field_name="sangrepCatalogSignature",
+    )
+    _schema_and_kind(signature, kind="sangrepCatalogSignature")
+    _require_enum_value(signature["suite"], values={"Ed25519"}, field_name="suite")
+    _require_enum_value(signature["role"], values={"catalog"}, field_name="role")
+    key_id = _require_string(signature["keyId"], field_name="keyId")
+    if _KEY_ID.fullmatch(key_id) is None:
+        raise ContractValidationError("keyId must be an Ed25519 SHA-256 key ID.")
+    _require_canonical_base64(
+        signature["signatureBase64"], field_name="signatureBase64", decoded_bytes=64
+    )
+    envelope = _exact_object(
+        signature["unsignedEnvelope"],
+        keys={
+            "schemaVersion",
+            "kind",
+            "catalogId",
+            "version",
+            "channel",
+            "catalogSha256",
+        },
+        field_name="sangrepCatalogUnsignedEnvelope",
+    )
+    _schema_and_kind(envelope, kind="sangrepCatalogUnsignedEnvelope")
+    identity = {
+        "catalogId": catalog_id,
+        "version": version,
+        "channel": channel.value,
+    }
+    for field_name, expected in identity.items():
+        if envelope[field_name] != expected:
+            raise ContractValidationError(
+                f"unsignedEnvelope.{field_name} does not match the catalog."
+            )
+    expected_catalog_sha256 = rfc8785_json_sha256_omitting_field_v1(
+        cast(JsonObjectValue, catalog_payload), field_name="signature"
+    )
+    actual_catalog_sha256 = require_sha256(
+        _require_string(envelope["catalogSha256"], field_name="catalogSha256"),
+        field_name="catalogSha256",
+    )
+    if actual_catalog_sha256 != expected_catalog_sha256:
+        raise ContractValidationError("catalogSha256 does not match the unsigned catalog.")
 
 
 def _require_canonical_base64(value: object, *, field_name: str, decoded_bytes: int) -> bytes:

@@ -133,16 +133,85 @@
           "const": "Ed25519"
         },
         "role": {
-          "enum": [
-            "packPublisher",
-            "catalog"
-          ]
+          "const": "packPublisher"
         },
         "keyId": {
           "$ref": "#/$defs/KeyIdV1"
         },
         "unsignedEnvelope": {
           "$ref": "#/$defs/SangrepPackUnsignedEnvelopeV1"
+        },
+        "signatureBase64": {
+          "$ref": "#/$defs/SignatureBase64V1"
+        }
+      }
+    },
+    "SangrepCatalogUnsignedEnvelopeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "catalogId",
+        "version",
+        "channel",
+        "catalogSha256"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepCatalogUnsignedEnvelope"
+        },
+        "catalogId": {
+          "$ref": "#/$defs/PackIdV1"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionV1"
+        },
+        "channel": {
+          "enum": [
+            "development",
+            "prerelease",
+            "release"
+          ]
+        },
+        "catalogSha256": {
+          "$ref": "#/$defs/Sha256V1"
+        }
+      }
+    },
+    "SangrepCatalogSignatureV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "suite",
+        "role",
+        "keyId",
+        "unsignedEnvelope",
+        "signatureBase64"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "sangrepCatalogSignature"
+        },
+        "suite": {
+          "const": "Ed25519"
+        },
+        "role": {
+          "const": "catalog"
+        },
+        "keyId": {
+          "$ref": "#/$defs/KeyIdV1"
+        },
+        "unsignedEnvelope": {
+          "$ref": "#/$defs/SangrepCatalogUnsignedEnvelopeV1"
         },
         "signatureBase64": {
           "$ref": "#/$defs/SignatureBase64V1"

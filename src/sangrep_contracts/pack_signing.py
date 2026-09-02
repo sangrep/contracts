@@ -23,6 +23,7 @@ from .canonical import (
 from .pack import (
     PackChannelV1,
     PackFamilyV1,
+    SangrepPackCatalogV1,
     SangrepPackManifestV1,
     _exact_object,
     _freeze,
@@ -35,10 +36,12 @@ from .pack import (
     _require_version,
     _safe_int,
     _schema_and_kind,
+    catalog_sha256_v1,
 )
 from .schema_bounds import validate_pack_schema_bounds_v1
 
 PACK_SIGNATURE_DOMAIN_V1 = b"SANGREP-PACK-SIGNATURE-V1\x00"
+CATALOG_SIGNATURE_DOMAIN_V1 = b"SANGREP-CATALOG-SIGNATURE-V1\x00"
 _KEY_ID = re.compile(r"ed25519-sha256:[0-9a-f]{64}\Z")
 _SHA256_RECEIPT = re.compile(r"sha256:[0-9a-f]{64}\Z")
 _RFC3339_UTC = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\Z")
@@ -168,6 +171,91 @@ class SangrepPackSignatureV1:
 
 
 @dataclass(frozen=True, slots=True)
+class SangrepCatalogUnsignedEnvelopeV1:
+    catalog_id: str
+    version: str
+    channel: PackChannelV1
+    catalog_sha256: str
+    wire: Rfc8785JsonObjectV1
+
+    @classmethod
+    def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepCatalogUnsignedEnvelopeV1")
+        payload = _exact_object(
+            value,
+            keys={
+                "schemaVersion",
+                "kind",
+                "catalogId",
+                "version",
+                "channel",
+                "catalogSha256",
+            },
+            field_name="sangrepCatalogUnsignedEnvelope",
+        )
+        _schema_and_kind(payload, kind="sangrepCatalogUnsignedEnvelope")
+        return cls(
+            catalog_id=_require_pack_id(payload["catalogId"], field_name="catalogId"),
+            version=_require_version(payload["version"], field_name="version"),
+            channel=_require_enum(PackChannelV1, payload["channel"], field_name="channel"),
+            catalog_sha256=_require_sha256_value(
+                payload["catalogSha256"], field_name="catalogSha256"
+            ),
+            wire=_freeze(payload),
+        )
+
+    def to_json_obj(self) -> JsonObjectValue:
+        return thaw_rfc8785_json_object_v1(self.wire)
+
+
+@dataclass(frozen=True, slots=True)
+class SangrepCatalogSignatureV1:
+    suite: str
+    role: SigningRoleV1
+    key_id: str
+    unsigned_envelope: SangrepCatalogUnsignedEnvelopeV1
+    signature: bytes
+    wire: Rfc8785JsonObjectV1
+
+    @classmethod
+    def from_json_obj(cls, value: object) -> Self:
+        validate_pack_schema_bounds_v1(value, definition="SangrepCatalogSignatureV1")
+        payload = _exact_object(
+            value,
+            keys={
+                "schemaVersion",
+                "kind",
+                "suite",
+                "role",
+                "keyId",
+                "unsignedEnvelope",
+                "signatureBase64",
+            },
+            field_name="sangrepCatalogSignature",
+        )
+        _schema_and_kind(payload, kind="sangrepCatalogSignature")
+        suite = _require_enum_value(payload["suite"], values={"Ed25519"}, field_name="suite")
+        role = _require_enum(SigningRoleV1, payload["role"], field_name="role")
+        if role is not SigningRoleV1.CATALOG:
+            raise ContractValidationError("catalog signature role must be catalog.")
+        return cls(
+            suite=suite,
+            role=role,
+            key_id=_require_key_id(payload["keyId"], field_name="keyId"),
+            unsigned_envelope=SangrepCatalogUnsignedEnvelopeV1.from_json_obj(
+                payload["unsignedEnvelope"]
+            ),
+            signature=_require_canonical_base64(
+                payload["signatureBase64"], field_name="signatureBase64", decoded_bytes=64
+            ),
+            wire=_freeze(payload),
+        )
+
+    def to_json_obj(self) -> JsonObjectValue:
+        return thaw_rfc8785_json_object_v1(self.wire)
+
+
+@dataclass(frozen=True, slots=True)
 class PackTrustRootV1:
     key_id: str
     public_key: bytes
@@ -265,10 +353,22 @@ def pack_signature_message_v1(envelope: SangrepPackUnsignedEnvelopeV1) -> bytes:
     return PACK_SIGNATURE_DOMAIN_V1 + rfc8785_json_bytes_v1(cast(JsonValue, envelope.to_json_obj()))
 
 
+def catalog_signature_message_v1(envelope: SangrepCatalogUnsignedEnvelopeV1) -> bytes:
+    return CATALOG_SIGNATURE_DOMAIN_V1 + rfc8785_json_bytes_v1(
+        cast(JsonValue, envelope.to_json_obj())
+    )
+
+
 def unsigned_envelope_from_canonical_json_bytes_v1(
     data: bytes,
 ) -> SangrepPackUnsignedEnvelopeV1:
     return SangrepPackUnsignedEnvelopeV1.from_json_obj(rfc8785_json_object_from_bytes_v1(data))
+
+
+def catalog_unsigned_envelope_from_canonical_json_bytes_v1(
+    data: bytes,
+) -> SangrepCatalogUnsignedEnvelopeV1:
+    return SangrepCatalogUnsignedEnvelopeV1.from_json_obj(rfc8785_json_object_from_bytes_v1(data))
 
 
 def verify_pack_signature_v1(
@@ -288,10 +388,12 @@ def verify_pack_signature_v1(
         raise ContractValidationError("pack signature role must be packPublisher.")
     if signature.unsigned_envelope.publisher_id != manifest.publisher_id:
         raise ContractValidationError("signature publisher identity does not match the manifest.")
-    root = _resolve_root(
+    root = _resolve_signing_root(
         trust_roots,
-        signature=signature,
-        manifest=manifest,
+        key_id=signature.key_id,
+        role=signature.role,
+        publisher_id=manifest.publisher_id,
+        channel=manifest.channel,
         build_profile=build_profile,
         verification_time=verification_time,
     )
@@ -301,6 +403,41 @@ def verify_pack_signature_v1(
         pack_signature_message_v1(signature.unsigned_envelope),
     ):
         raise ContractValidationError("Ed25519 pack signature is invalid.")
+    return root
+
+
+def verify_catalog_signature_v1(
+    catalog: SangrepPackCatalogV1,
+    trust_roots: SangrepPackTrustRootsV1,
+    *,
+    build_profile: BuildProfileV1,
+    verification_time: datetime,
+    verifier: Ed25519VerifierV1,
+) -> PackTrustRootV1:
+    if not isinstance(build_profile, BuildProfileV1):
+        raise ContractValidationError("build_profile contains an unknown value.")
+    _require_aware_utc(verification_time, field_name="verification_time")
+    signature_payload = catalog.to_json_obj()["signature"]
+    signature = SangrepCatalogSignatureV1.from_json_obj(signature_payload)
+    if signature.unsigned_envelope.catalog_id != catalog.catalog_id:
+        raise ContractValidationError("signature catalog identity does not match the catalog.")
+    if signature.unsigned_envelope.catalog_sha256 != catalog_sha256_v1(catalog):
+        raise ContractValidationError("catalogSha256 does not match the unsigned catalog.")
+    root = _resolve_signing_root(
+        trust_roots,
+        key_id=signature.key_id,
+        role=signature.role,
+        publisher_id=catalog.catalog_id,
+        channel=catalog.channel,
+        build_profile=build_profile,
+        verification_time=verification_time,
+    )
+    if not verifier(
+        root.public_key,
+        signature.signature,
+        catalog_signature_message_v1(signature.unsigned_envelope),
+    ):
+        raise ContractValidationError("Ed25519 catalog signature is invalid.")
     return root
 
 
@@ -488,25 +625,27 @@ def _parse_revocation(value: object, *, field_name: str) -> PackRevocationV1:
     )
 
 
-def _resolve_root(
+def _resolve_signing_root(
     trust_roots: SangrepPackTrustRootsV1,
     *,
-    signature: SangrepPackSignatureV1,
-    manifest: SangrepPackManifestV1,
+    key_id: str,
+    role: SigningRoleV1,
+    publisher_id: str,
+    channel: PackChannelV1,
     build_profile: BuildProfileV1,
     verification_time: datetime,
 ) -> PackTrustRootV1:
-    root = next((item for item in trust_roots.roots if item.key_id == signature.key_id), None)
+    root = next((item for item in trust_roots.roots if item.key_id == key_id), None)
     if root is None:
         raise ContractValidationError("signature uses an unknown key.")
-    if root.role is not signature.role:
+    if root.role is not role:
         raise ContractValidationError("trust-root role does not match the signature role.")
-    if root.publisher_id != manifest.publisher_id:
-        raise ContractValidationError("trust-root publisher identity does not match the manifest.")
-    if manifest.channel not in root.channels:
-        raise ContractValidationError("trust root does not allow the manifest channel.")
+    if root.publisher_id != publisher_id:
+        raise ContractValidationError("trust-root publisher identity does not match signed bytes.")
+    if channel not in root.channels:
+        raise ContractValidationError("trust root does not allow the signed channel.")
     if build_profile is BuildProfileV1.RELEASE and (
-        manifest.channel is PackChannelV1.DEVELOPMENT or PackChannelV1.DEVELOPMENT in root.channels
+        channel is PackChannelV1.DEVELOPMENT or PackChannelV1.DEVELOPMENT in root.channels
     ):
         raise ContractValidationError("release build rejects development manifests and roots.")
     if any(item.key_id == root.key_id for item in trust_roots.revocations):
@@ -522,6 +661,13 @@ def _require_key_id(value: object, *, field_name: str) -> str:
     text = _require_string(value, field_name=field_name)
     if _KEY_ID.fullmatch(text) is None:
         raise ContractValidationError(f"{field_name} must be an Ed25519 SHA-256 key ID.")
+    return text
+
+
+def _require_sha256_value(value: object, *, field_name: str) -> str:
+    text = _require_string(value, field_name=field_name)
+    if len(text) != 64 or any(character not in "0123456789abcdef" for character in text):
+        raise ContractValidationError(f"{field_name} must be a lowercase SHA-256 value.")
     return text
 
 

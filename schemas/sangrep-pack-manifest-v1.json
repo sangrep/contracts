@@ -1000,7 +1000,8 @@
         "catalogId",
         "version",
         "channel",
-        "entries"
+        "entries",
+        "signature"
       ],
       "properties": {
         "schemaVersion": {
@@ -1027,6 +1028,9 @@
           "items": {
             "$ref": "#/$defs/PackCatalogEntryV1"
           }
+        },
+        "signature": {
+          "$ref": "https://schemas.sangrep.com/contracts/sangrep-pack-signature-v1.json#/$defs/SangrepCatalogSignatureV1"
         }
       }
     }

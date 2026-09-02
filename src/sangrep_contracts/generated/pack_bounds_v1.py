@@ -115,12 +115,22 @@ PACK_BOUND_RULES_V1: Final[dict[str, tuple[PackBoundRuleV1, ...]]] = {
     "ReceiptSha256V1": (),
     "RelativePathV1": (((), 1, 1024, None, None),),
     "Rfc3339UtcSecondV1": (),
+    "SangrepCatalogSignatureV1": (
+        (("unsignedEnvelope", "catalogId"), 1, 128, None, None),
+        (("unsignedEnvelope", "version"), None, 128, None, None),
+    ),
+    "SangrepCatalogUnsignedEnvelopeV1": (
+        (("catalogId",), 1, 128, None, None),
+        (("version",), None, 128, None, None),
+    ),
     "SangrepPackCatalogV1": (
         (("catalogId",), 1, 128, None, None),
         (("entries", "*", "dependencies", "*", "packId"), 1, 128, None, None),
         (("entries", "*", "dependencies", "*", "version"), None, 128, None, None),
         (("entries", "*", "packId"), 1, 128, None, None),
         (("entries", "*", "version"), None, 128, None, None),
+        (("signature", "unsignedEnvelope", "catalogId"), 1, 128, None, None),
+        (("signature", "unsignedEnvelope", "version"), None, 128, None, None),
         (("version",), None, 128, None, None),
     ),
     "SangrepPackManifestV1": (

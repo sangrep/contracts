@@ -1,6 +1,6 @@
 # Pack signing authority v1
 
-This document defines `SangrepPackSignatureV1`, `SangrepPackUnsignedEnvelopeV1`, and
+This document defines the pack and catalog signature/envelope pairs plus
 `SangrepPackTrustRootsV1`. The normative schema is
 [`schemas/sangrep-pack-signature-v1.json`](../../schemas/sangrep-pack-signature-v1.json).
 
@@ -10,13 +10,15 @@ The signature suite is Ed25519 as defined by RFC 8032. The signed message is exa
 
 ```text
 ASCII("SANGREP-PACK-SIGNATURE-V1") || 0x00 || RFC8785(unsignedEnvelope)
+ASCII("SANGREP-CATALOG-SIGNATURE-V1") || 0x00 || RFC8785(catalogUnsignedEnvelope)
 ```
 
 The envelope contains only closed identity and digest fields. Its JSON must be UTF-8 RFC 8785
 canonical bytes. The bounded v1 profile admits strings, booleans, null, arrays, objects, and I-JSON
 safe integers; pack schemas do not admit floating-point numbers. Unicode strings are preserved
 exactly as supplied and are never normalized. The signature field is outside the envelope and is
-never recursively hashed. Signatures are canonical base64 over exactly 64 bytes.
+never recursively hashed. The catalog envelope binds catalog ID, semantic version, channel, and the
+RFC 8785 digest of the unsigned catalog. Signatures are canonical base64 over exactly 64 bytes.
 
 The key ID is `ed25519-sha256:` followed by 64 lowercase hexadecimal characters derived from
 SHA-256 over the exact 32 raw Ed25519 public-key bytes. Alternate algorithms, encodings, and
@@ -34,8 +36,10 @@ Consumers fail closed in this order:
 5. verify Ed25519 over the exact domain-separated canonical bytes; and
 6. compare the archive, payload tree, SBOM, license bundle, and receipt digests before activation.
 
-Pack-publisher and catalog keys use different roles. A catalog cannot add trust. Cached reuse and
-rollback use the current embedded denylist, so an older artifact does not bypass revocation.
+Pack-publisher and catalog keys use different roles and domains. Catalog verification requires a
+catalog-role root whose publisher identity equals the signed catalog ID; a pack-publisher root
+cannot verify catalog bytes. A catalog cannot add trust. Cached reuse and rollback use the current
+embedded denylist, so an older artifact does not bypass revocation.
 
 ## Development, rotation, and revocation
 

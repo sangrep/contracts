@@ -11,6 +11,7 @@ from sangrep_contracts.generated.pack_manifest_v1 import (
     SangrepPackManifestV1Wire,
 )
 from sangrep_contracts.generated.pack_signature_v1 import (
+    SangrepCatalogSignatureV1Wire,
     SangrepPackSignatureV1Wire,
     SangrepPackTrustRootsV1Wire,
 )
@@ -23,6 +24,7 @@ def test_generated_wire_types_expose_manifest_catalog_signature_and_trust_fields
     catalog_hints = get_type_hints(SangrepPackCatalogV1Wire)
     signature_hints = get_type_hints(SangrepPackSignatureV1Wire)
     roots_hints = get_type_hints(SangrepPackTrustRootsV1Wire)
+    catalog_signature_hints = get_type_hints(SangrepCatalogSignatureV1Wire)
 
     assert set(manifest_hints) == {
         "schemaVersion",
@@ -54,6 +56,7 @@ def test_generated_wire_types_expose_manifest_catalog_signature_and_trust_fields
         "version",
         "channel",
         "entries",
+        "signature",
     }
     assert set(signature_hints) == {
         "schemaVersion",
@@ -71,6 +74,15 @@ def test_generated_wire_types_expose_manifest_catalog_signature_and_trust_fields
         "roots",
         "rotations",
         "revocations",
+    }
+    assert set(catalog_signature_hints) == {
+        "schemaVersion",
+        "kind",
+        "suite",
+        "role",
+        "keyId",
+        "unsignedEnvelope",
+        "signatureBase64",
     }
 
 
@@ -94,8 +106,9 @@ def test_generated_bound_rules_cover_normative_manifest_and_signature_roots() ->
     rules = module.PACK_BOUND_RULES_V1
 
     assert len(rules["SangrepPackManifestV1"]) == 50
-    assert len(rules["SangrepPackCatalogV1"]) == 6
+    assert len(rules["SangrepPackCatalogV1"]) == 8
     assert len(rules["SangrepPackSignatureV1"]) == 3
+    assert len(rules["SangrepCatalogSignatureV1"]) == 2
     assert len(rules["SangrepPackTrustRootsV1"]) == 5
     assert (
         ("permissions", "grants", "*", "reason"),

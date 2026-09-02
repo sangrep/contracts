@@ -521,9 +521,25 @@
               }
             ]
           }
-        ]
+        ],
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepCatalogSignature",
+          "suite": "Ed25519",
+          "role": "catalog",
+          "keyId": "ed25519-sha256:ab64ec7b6caf5f73def9c133a35a4b5c7059554290c03899138bdd029db235fb",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepCatalogUnsignedEnvelope",
+            "catalogId": "sangrep-development",
+            "version": "1.0.0-dev.1",
+            "channel": "development",
+            "catalogSha256": "ffc1254aef2e04b0ce237f366c9914b5d8fce8d2bbe830ed66e11897a5881998"
+          },
+          "signatureBase64": "wQaW64jcPOecaN4WYGev+X3ARANcu+nu5VGWtgiO2rkavagkXm45BBEPJjr3RDnXsBXuPZYyZtUAGuBLP85BBw=="
+        }
       },
-      "canonicalSha256": "ffc1254aef2e04b0ce237f366c9914b5d8fce8d2bbe830ed66e11897a5881998"
+      "canonicalSha256": "8eee45f58f9ce7043945f3a50e8c1f3bd16de5a654189f31c1593201d35abdcb"
     }
   ],
   "negativeCases": [
@@ -2498,7 +2514,23 @@
               }
             ]
           }
-        ]
+        ],
+        "signature": {
+          "schemaVersion": 1,
+          "kind": "sangrepCatalogSignature",
+          "suite": "Ed25519",
+          "role": "catalog",
+          "keyId": "ed25519-sha256:ab64ec7b6caf5f73def9c133a35a4b5c7059554290c03899138bdd029db235fb",
+          "unsignedEnvelope": {
+            "schemaVersion": 1,
+            "kind": "sangrepCatalogUnsignedEnvelope",
+            "catalogId": "sangrep-development",
+            "version": "1.0.0-dev.1",
+            "channel": "development",
+            "catalogSha256": "becd4cb27be8e04b83904585546d4183166a762cf271eee21675fb760fd4f367"
+          },
+          "signatureBase64": "6x+iJt38lAeCNA64VnkCcdDGsPdKaLvcLDAQOydZ9Wz/AEostPbd9foiA7073L0Z87+4V3nQW9+r+8S4v2czBQ=="
+        }
       }
     },
     {

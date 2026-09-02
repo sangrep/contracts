@@ -52,9 +52,28 @@ class SangrepPackSignatureV1Wire(TypedDict):
     schemaVersion: Literal[1]
     kind: Literal["sangrepPackSignature"]
     suite: Literal["Ed25519"]
-    role: Literal["packPublisher", "catalog"]
+    role: Literal["packPublisher"]
     keyId: KeyIdV1Wire
     unsignedEnvelope: SangrepPackUnsignedEnvelopeV1Wire
+    signatureBase64: SignatureBase64V1Wire
+
+
+class SangrepCatalogUnsignedEnvelopeV1Wire(TypedDict):
+    schemaVersion: Literal[1]
+    kind: Literal["sangrepCatalogUnsignedEnvelope"]
+    catalogId: PackIdV1Wire
+    version: SemanticVersionV1Wire
+    channel: Literal["development", "prerelease", "release"]
+    catalogSha256: Sha256V1Wire
+
+
+class SangrepCatalogSignatureV1Wire(TypedDict):
+    schemaVersion: Literal[1]
+    kind: Literal["sangrepCatalogSignature"]
+    suite: Literal["Ed25519"]
+    role: Literal["catalog"]
+    keyId: KeyIdV1Wire
+    unsignedEnvelope: SangrepCatalogUnsignedEnvelopeV1Wire
     signatureBase64: SignatureBase64V1Wire
 
 
@@ -102,6 +121,8 @@ __all__ = (
     "PublicKeyBase64V1Wire",
     "ReceiptSha256V1Wire",
     "Rfc3339UtcSecondV1Wire",
+    "SangrepCatalogSignatureV1Wire",
+    "SangrepCatalogUnsignedEnvelopeV1Wire",
     "SangrepPackSignatureV1Wire",
     "SangrepPackTrustRootsV1Wire",
     "SangrepPackUnsignedEnvelopeV1Wire",
